@@ -4,8 +4,13 @@ const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+let vapidConfigured = false;
+
+function ensureVapidConfigured() {
+  if (!vapidConfigured && vapidPublicKey && vapidPrivateKey) {
+    webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+    vapidConfigured = true;
+  }
 }
 
 /**
@@ -17,6 +22,9 @@ export async function sendPushNotification(title: string, message: string, url?:
     console.warn('⚠️ VAPID keys not configured, skipping push notification');
     return { success: false, sent: 0 };
   }
+
+  // Configure VAPID details at runtime (not module load time)
+  ensureVapidConfigured();
 
   try {
     const { getActiveSubscriptions } = await import('./subscriptions');
