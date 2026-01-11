@@ -1,0 +1,211 @@
+
+> rise-up-news@0.1.0 dev
+> next dev
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/jesper/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /Users/jesper/Projects/Dev_projects/Rise_up/package-lock.json
+
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.68.52:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 1338ms
+ ○ Compiling /map ...
+ ✓ Compiled /map in 1444ms (764 modules)
+ GET /map 200 in 1658ms
+ ✓ Compiled in 51ms (301 modules)
+ ✓ Compiled /api/incidents in 166ms (728 modules)
+ GET /api/incidents 200 in 242ms
+ ✓ Compiled / in 172ms (756 modules)
+ GET / 200 in 287ms
+ ✓ Compiled /api/news in 108ms (760 modules)
+🔄 Fetching fresh news from Perplexity...
+📰 Received 9 articles from Perplexity
+✅ Added 9 new articles (0 duplicates removed)
+📊 Total articles in cache: 9
+ GET /api/news 200 in 17847ms
+ GET /api/incidents 200 in 6ms
+ GET /map 200 in 65ms
+ GET /map 200 in 37ms
+ ✓ Compiled in 67ms (314 modules)
+ GET /map 200 in 34ms
+ ✓ Compiled in 63ms (314 modules)
+ GET /map 200 in 14ms
+ ✓ Compiled in 76ms (720 modules)
+ GET /map 200 in 83ms
+ ✓ Compiled /report in 312ms (731 modules)
+ GET /report 200 in 480ms
+ ✓ Compiled /api/incidents in 92ms (447 modules)
+📍 New incident reported: protest - Test report from form submission
+ POST /api/incidents 201 in 151ms
+ GET /api/incidents 200 in 5ms
+ GET /report 200 in 163ms
+ ✓ Compiled / in 58ms (463 modules)
+ GET / 200 in 193ms
+ GET /report 200 in 45ms
+ ✓ Compiled /api/news in 71ms (467 modules)
+🔄 Fetching fresh news from Perplexity...
+📰 Received 8 articles from Perplexity
+✅ Added 8 new articles (0 duplicates removed)
+📊 Total articles in cache: 8
+ GET /api/news 200 in 35123ms
+ GET /api/incidents 200 in 6ms
+ ✓ Compiled in 271ms (738 modules)
+ ✓ Compiled in 101ms (738 modules)
+ ✓ Compiled in 47ms (318 modules)
+ ✓ Compiled in 70ms (318 modules)
+ ✓ Compiled in 45ms (318 modules)
+ ✓ Compiled in 42ms (318 modules)
+ ✓ Compiled in 61ms (318 modules)
+ ✓ Compiled in 45ms (318 modules)
+ ✓ Compiled in 45ms (318 modules)
+ ✓ Compiled in 44ms (318 modules)
+ GET /map 200 in 193ms
+ ✓ Compiled /api/news in 89ms (443 modules)
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity and Twitter...
+📰 Received 8 articles from Perplexity
+🐦 Received 3 articles from Twitter
+✅ Added 11 new articles (0 duplicates removed)
+📊 Total articles in cache: 11
+ GET /api/news 200 in 15433ms
+ GET /api/news 200 in 4ms
+ ✓ Compiled / in 125ms (459 modules)
+ GET / 200 in 278ms
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity and Twitter...
+📰 Received 6 articles from Perplexity
+🐦 Received 3 articles from Twitter
+✅ Added 9 new articles (0 duplicates removed)
+📊 Total articles in cache: 9
+ GET /api/news 200 in 15814ms
+ GET / 200 in 31ms
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity and Twitter...
+📰 Received 12 articles from Perplexity
+🐦 Received 3 articles from Twitter
+⏭️  Skipping exact duplicate: Breaking: Large protests reported in Tehran univer...
+⏭️  Skipping exact duplicate: Crown Prince Reza Pahlavi addresses protesters in ...
+⏭️  Skipping exact duplicate: Global solidarity protests held in 50+ cities worl...
+✅ Added 12 new articles (3 duplicates removed)
+📊 Total articles in cache: 21
+ GET /api/news?page=0&limit=20 200 in 18116ms
+ GET / 200 in 36ms
+ ✓ Compiled in 150ms (754 modules)
+ GET / 200 in 107ms
+ ✓ Compiled in 157ms (754 modules)
+ GET / 200 in 57ms
+ ✓ Compiled in 112ms (754 modules)
+ GET / 200 in 51ms
+ ✓ Compiled /api/news in 95ms (459 modules)
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity and Twitter...
+ GET / 200 in 110ms
+No JSON array found in Perplexity response
+Response content: I appreciate your detailed request, but I need to clarify my role and capabilities.
+
+I'm Perplexity, a search assistant designed to synthesize information from provided search results to answer user queries. I'm **not** a news aggregation system that returns structured JSON, and I cannot:
+
+- Perform independent searches across multiple news sources
+- Generate JSON output with the specific structure you've requested
+- Systematically crawl news websites for articles matching your 8 topic categorie
+📰 Received 1 articles from Perplexity
+🐦 Received 3 articles from Twitter
+✅ Added 4 new articles (0 duplicates removed)
+📊 Total articles in cache: 4
+ GET /api/news 200 in 8678ms
+ ✓ Compiled in 132ms (754 modules)
+ GET / 200 in 103ms
+ ✓ Compiled in 55ms (318 modules)
+ GET / 200 in 13ms
+ ✓ Compiled in 88ms (754 modules)
+ GET / 200 in 49ms
+ ✓ Compiled in 93ms (754 modules)
+ GET / 200 in 49ms
+ ✓ Compiled in 91ms (754 modules)
+ GET / 200 in 50ms
+ ✓ Compiled in 199ms (754 modules)
+ GET / 200 in 64ms
+ ✓ Compiled in 92ms (754 modules)
+ GET / 200 in 49ms
+ ✓ Compiled /api/news in 126ms (460 modules)
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity, Twitter, and Telegram...
+ GET / 200 in 128ms
+No JSON array found in Perplexity response
+Response content: I appreciate your detailed request, but I need to clarify an important limitation: **I cannot function as a news aggregation system that performs independent searches or returns structured JSON data.**
+
+My role is to synthesize and analyze the search results that have been provided to me. I cannot:
+
+- Perform new searches across the internet
+- Access real-time news feeds or databases
+- Generate JSON output with articles I haven't been given
+- Search for articles matching your 8 topic categories 
+📰 Received 0 articles from Perplexity
+🐦 Received 3 articles from Twitter
+📱 Received 4 articles from Telegram
+✅ Added 7 new articles (0 duplicates removed)
+📊 Total articles in cache: 7
+ GET /api/news 200 in 5872ms
+ GET /api/news 200 in 4ms
+ GET /api/news 200 in 3ms
+ ✓ Compiled in 68ms (318 modules)
+ GET / 200 in 37ms
+ GET / 200 in 32ms
+ ✓ Compiled in 91ms (740 modules)
+ GET / 200 in 108ms
+ ✓ Compiled /api/news in 49ms (460 modules)
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity, Twitter, and Telegram...
+ GET /map 200 in 51ms
+ ✓ Compiled /api/incidents in 83ms (462 modules)
+ GET /api/incidents 200 in 110ms
+ ✓ Compiled in 58ms (318 modules)
+ GET /map 200 in 36ms
+ ✓ Compiled in 233ms (780 modules)
+ GET /map 200 in 46ms
+📰 Received 14 articles from Perplexity
+🐦 Received 3 articles from Twitter
+📱 Received 4 articles from Telegram
+✅ Added 21 new articles (0 duplicates removed)
+📊 Total articles in cache: 21
+ GET /api/news?page=0&limit=20 200 in 35506ms
+ ✓ Compiled in 122ms (782 modules)
+ GET /map 200 in 45ms
+ ✓ Compiled in 56ms (319 modules)
+ GET /map 200 in 14ms
+ ✓ Compiled in 46ms (319 modules)
+ GET /map 200 in 13ms
+ GET /map 200 in 34ms
+ ✓ Compiled in 83ms (742 modules)
+ GET /map 200 in 107ms
+ GET /map 200 in 114ms
+ ✓ Compiled in 51ms (319 modules)
+ GET /map 200 in 17ms
+ GET / 200 in 16ms
+ ✓ Compiled in 39ms (319 modules)
+ GET / 200 in 13ms
+ ✓ Compiled in 47ms (319 modules)
+ GET / 200 in 15ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.68.52:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for client (static)...
+ ○ (pwa) Service worker: /Users/jesper/Projects/Dev_projects/Rise_up/public/sw.js
+ ○ (pwa)   URL: /sw.js
+ ○ (pwa)   Scope: /
+ ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
+ ✓ Ready in 2.1s

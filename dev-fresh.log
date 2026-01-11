@@ -1,0 +1,50 @@
+
+> rise-up-news@0.1.0 dev
+> next dev
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/jesper/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /Users/jesper/Projects/Dev_projects/Rise_up/package-lock.json
+
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.68.52:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 1583ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1357ms (564 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 1591ms
+ ✓ Compiled in 55ms (241 modules)
+ ○ Compiling /api/news ...
+ ✓ Compiled /api/news in 897ms (573 modules)
+🔄 Fetching fresh news from Perplexity...
+📰 Received 7 articles from Perplexity
+✅ Added 7 new articles (0 duplicates removed)
+📊 Total articles in cache: 7
+ GET /api/news?page=0&limit=20 200 in 16899ms
+ GET /api/news 200 in 6ms
+ GET /api/news 200 in 5ms
+ ✓ Compiled /_not-found in 152ms (578 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /api/news 404 in 269ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/jesper/Projects/Dev_projects/Rise_up/.next/server/app/api/news/route.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/jesper/Projects/Dev_projects/Rise_up/.next/server/app/api/news/route.js',
+  page: '/api/news'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 704ms (918 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 346ms
+ GET / 200 in 10ms
+ GET /api/news 500 in 1096ms
+[?25h

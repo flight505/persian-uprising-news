@@ -1,0 +1,189 @@
+
+> rise-up-news@0.1.0 dev
+> next dev
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/jesper/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /Users/jesper/Projects/Dev_projects/Rise_up/package-lock.json
+
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.68.52:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 1546ms
+ ○ Compiling /api/news ...
+ ✓ Compiled /api/news in 669ms (299 modules)
+🔄 Fetching fresh news from Perplexity...
+📰 Received 8 articles from Perplexity
+✅ Added 8 new articles (0 duplicates removed)
+📊 Total articles in cache: 8
+ GET /api/news 200 in 13786ms
+ GET /api/news 200 in 5ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1029ms (587 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 1191ms
+ ✓ Compiled in 42ms (242 modules)
+🔄 Fetching fresh news from Perplexity...
+Error fetching from Perplexity: SyntaxError: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)
+    at JSON.parse (<anonymous>)
+    at fetchPerplexityNews (lib/perplexity.ts:201:48)
+    at async refreshNewsCache (app/api/news/route.ts:101:25)
+    at async GET (app/api/news/route.ts:34:7)
+  199 |     }
+  200 |
+> 201 |     const articles: PerplexityArticle[] = JSON.parse(jsonMatch[0]);
+      |                                                ^
+  202 |
+  203 |     // Enhance with citations if available
+  204 |     if (data.citations && data.citations.length > 0) {
+Error refreshing news cache: SyntaxError: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)
+    at JSON.parse (<anonymous>)
+    at fetchPerplexityNews (lib/perplexity.ts:201:48)
+    at async refreshNewsCache (app/api/news/route.ts:101:25)
+    at async GET (app/api/news/route.ts:34:7)
+  199 |     }
+  200 |
+> 201 |     const articles: PerplexityArticle[] = JSON.parse(jsonMatch[0]);
+      |                                                ^
+  202 |
+  203 |     // Enhance with citations if available
+  204 |     if (data.citations && data.citations.length > 0) {
+Error in /api/news: SyntaxError: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)
+    at JSON.parse (<anonymous>)
+    at fetchPerplexityNews (lib/perplexity.ts:201:48)
+    at async refreshNewsCache (app/api/news/route.ts:101:25)
+    at async GET (app/api/news/route.ts:34:7)
+  199 |     }
+  200 |
+> 201 |     const articles: PerplexityArticle[] = JSON.parse(jsonMatch[0]);
+      |                                                ^
+  202 |
+  203 |     // Enhance with citations if available
+  204 |     if (data.citations && data.citations.length > 0) {
+ GET /api/news 500 in 6440ms
+🔄 Fetching fresh news from Perplexity...
+Error fetching from Perplexity: SyntaxError: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)
+    at JSON.parse (<anonymous>)
+    at fetchPerplexityNews (lib/perplexity.ts:201:48)
+    at async refreshNewsCache (app/api/news/route.ts:101:25)
+    at async GET (app/api/news/route.ts:34:7)
+  199 |     }
+  200 |
+> 201 |     const articles: PerplexityArticle[] = JSON.parse(jsonMatch[0]);
+      |                                                ^
+  202 |
+  203 |     // Enhance with citations if available
+  204 |     if (data.citations && data.citations.length > 0) {
+Error refreshing news cache: SyntaxError: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)
+    at JSON.parse (<anonymous>)
+    at fetchPerplexityNews (lib/perplexity.ts:201:48)
+    at async refreshNewsCache (app/api/news/route.ts:101:25)
+    at async GET (app/api/news/route.ts:34:7)
+  199 |     }
+  200 |
+> 201 |     const articles: PerplexityArticle[] = JSON.parse(jsonMatch[0]);
+      |                                                ^
+  202 |
+  203 |     // Enhance with citations if available
+  204 |     if (data.citations && data.citations.length > 0) {
+Error in /api/news: SyntaxError: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)
+    at JSON.parse (<anonymous>)
+    at fetchPerplexityNews (lib/perplexity.ts:201:48)
+    at async refreshNewsCache (app/api/news/route.ts:101:25)
+    at async GET (app/api/news/route.ts:34:7)
+  199 |     }
+  200 |
+> 201 |     const articles: PerplexityArticle[] = JSON.parse(jsonMatch[0]);
+      |                                                ^
+  202 |
+  203 |     // Enhance with citations if available
+  204 |     if (data.citations && data.citations.length > 0) {
+ GET /api/news 500 in 7275ms
+ ✓ Compiled in 51ms (345 modules)
+🔄 Fetching fresh news from Perplexity...
+📰 Received 6 articles from Perplexity
+✅ Added 6 new articles (0 duplicates removed)
+📊 Total articles in cache: 6
+ GET /api/news 200 in 11044ms
+ GET /api/news 200 in 5ms
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 50ms
+ ✓ Compiled in 94ms (587 modules)
+ GET / 200 in 59ms
+🔄 Fetching fresh news from Perplexity...
+📰 Received 8 articles from Perplexity
+✅ Added 8 new articles (0 duplicates removed)
+📊 Total articles in cache: 8
+ GET /api/news 200 in 13019ms
+ GET /api/news 200 in 5ms
+ ✓ Compiled in 37ms (228 modules)
+ ✓ Compiled in 54ms (242 modules)
+ ✓ Compiled in 28ms (228 modules)
+ ✓ Compiled in 40ms (242 modules)
+ ✓ Compiled in 40ms (242 modules)
+ ✓ Compiled in 23ms (228 modules)
+ ✓ Compiled in 101ms (242 modules)
+ ✓ Compiled in 86ms (249 modules)
+ ✓ Compiled /api/incidents in 87ms (338 modules)
+ GET /api/incidents 200 in 120ms
+ ○ Compiling /map ...
+ ✓ Compiled /map in 516ms (784 modules)
+ GET /map 200 in 673ms
+ GET /api/incidents 200 in 10ms
+ GET /api/incidents 200 in 4ms
+ GET /api/incidents?type=protest 200 in 4ms
+📍 New incident reported: protest - Test protest incident
+ POST /api/incidents 201 in 6ms
+ GET /api/incidents 200 in 4ms
+📍 New incident reported: other - Rate limit test
+ POST /api/incidents 201 in 5ms
+📍 New incident reported: other - Rate limit test
+ POST /api/incidents 201 in 4ms
+📍 New incident reported: other - Rate limit test
+ POST /api/incidents 201 in 5ms
+📍 New incident reported: other - Rate limit test
+ POST /api/incidents 201 in 3ms
+ POST /api/incidents 429 in 5ms
+ POST /api/incidents 429 in 3ms
+ ✓ Compiled / in 81ms (456 modules)
+ GET / 200 in 159ms
+ GET /map 200 in 45ms
+ GET /api/incidents 200 in 8ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 149ms (734 modules)
+ GET /map 200 in 295ms
+ ✓ Compiled /api/incidents in 82ms (440 modules)
+ GET /api/incidents 200 in 146ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 99ms (754 modules)
+ GET /map 200 in 234ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 111ms (754 modules)
+ GET /map 200 in 142ms
+ GET /map 200 in 33ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 99ms (754 modules)
+ GET /map 200 in 195ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 104ms (754 modules)
+ GET /map 200 in 192ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 102ms (754 modules)
+ GET /map 200 in 178ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.68.52:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 1802ms
+[?25h

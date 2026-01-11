@@ -1,0 +1,46 @@
+{
+  "name": "rise-up-news",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prebuild": "tsx scripts/generate-icons.ts",
+    "generate-vapid-keys": "tsx scripts/generate-vapid-keys.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.709.0",
+    "@aws-sdk/lib-dynamodb": "^3.709.0",
+    "apify-client": "^2.9.5",
+    "autoprefixer": "^10.4.23",
+    "idb": "^8.0.0",
+    "leaflet": "^1.9.4",
+    "minhash": "^0.0.2",
+    "next": "^15.1.3",
+    "node-telegram-bot-api": "^0.66.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^4.2.1",
+    "react-leaflet-cluster": "^2.1.0",
+    "sharp": "^0.33.5",
+    "swr": "^2.2.5",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^22",
+    "@types/node-telegram-bot-api": "^0.64.7",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.3",
+    "eslint": "^9",
+    "eslint-config-next": "^15.1.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,225 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Rise Up News Aggregator - Serverless Infrastructure
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    MemorySize: 512
+    Timeout: 30
+    Environment:
+      Variables:
+        DYNAMODB_TABLE_ARTICLES: !Ref ArticlesTable
+        DYNAMODB_TABLE_INCIDENTS: !Ref IncidentsTable
+        DYNAMODB_TABLE_SUBSCRIPTIONS: !Ref SubscriptionsTable
+
+Parameters:
+  PerplexityAPIKey:
+    Type: String
+    NoEcho: true
+    Description: Perplexity API Key
+  ApifyAPIToken:
+    Type: String
+    NoEcho: true
+    Description: Apify API Token
+  TelegramBotToken:
+    Type: String
+    NoEcho: true
+    Description: Telegram Bot Token
+  VAPIDSubject:
+    Type: String
+    Description: VAPID Subject (mailto:email@example.com)
+  VAPIDPublicKey:
+    Type: String
+    Description: VAPID Public Key
+  VAPIDPrivateKey:
+    Type: String
+    NoEcho: true
+    Description: VAPID Private Key
+
+Resources:
+  # DynamoDB Tables
+  ArticlesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: RiseUp-Articles
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: contentHash
+          AttributeType: S
+        - AttributeName: publishedAt
+          AttributeType: N
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: contentHash-index
+          KeySchema:
+            - AttributeName: contentHash
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: publishedAt-index
+          KeySchema:
+            - AttributeName: PK
+              KeyType: HASH
+            - AttributeName: publishedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: true
+
+  IncidentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: RiseUp-Incidents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp-index
+          KeySchema:
+            - AttributeName: PK
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  SubscriptionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: RiseUp-Subscriptions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+  # Lambda Functions
+  AggregatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: RiseUp-Aggregator
+      CodeUri: lambda/aggregator/
+      Handler: index.handler
+      Environment:
+        Variables:
+          PERPLEXITY_API_KEY: !Ref PerplexityAPIKey
+          APIFY_API_TOKEN: !Ref ApifyAPIToken
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ArticlesTable
+      Events:
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(10 minutes)
+            Description: Run aggregator every 10 minutes
+
+  TelegramBotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: RiseUp-TelegramBot
+      CodeUri: lambda/aggregator/
+      Handler: telegram-bot.handler
+      Environment:
+        Variables:
+          TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ArticlesTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /telegram-webhook
+            Method: post
+
+  PushSenderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: RiseUp-PushSender
+      CodeUri: lambda/notifications/
+      Handler: push-sender.handler
+      Environment:
+        Variables:
+          VAPID_SUBJECT: !Ref VAPIDSubject
+          VAPID_PUBLIC_KEY: !Ref VAPIDPublicKey
+          VAPID_PRIVATE_KEY: !Ref VAPIDPrivateKey
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscriptionsTable
+      Events:
+        DynamoDBStream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt ArticlesTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 10
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+
+  ReportValidatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: RiseUp-ReportValidator
+      CodeUri: lambda/moderation/
+      Handler: report-validator.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IncidentsTable
+
+Outputs:
+  ArticlesTableName:
+    Description: Articles DynamoDB Table Name
+    Value: !Ref ArticlesTable
+    Export:
+      Name: !Sub "${AWS::StackName}-ArticlesTable"
+
+  IncidentsTableName:
+    Description: Incidents DynamoDB Table Name
+    Value: !Ref IncidentsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-IncidentsTable"
+
+  SubscriptionsTableName:
+    Description: Subscriptions DynamoDB Table Name
+    Value: !Ref SubscriptionsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-SubscriptionsTable"
+
+  AggregatorFunctionArn:
+    Description: Aggregator Lambda Function ARN
+    Value: !GetAtt AggregatorFunction.Arn
+
+  TelegramWebhookUrl:
+    Description: Telegram Bot Webhook URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/telegram-webhook"
