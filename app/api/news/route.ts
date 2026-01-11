@@ -3,10 +3,11 @@ import { fetchPerplexityNews, PerplexityArticle } from '@/lib/perplexity';
 import { getMockTwitterArticles, TwitterArticle } from '@/lib/twitter';
 import { scrapeTwitter, ScrapedArticle as TwitterScrapedArticle } from '@/lib/twitter-scraper';
 import { getMockTelegramArticles, TelegramArticle } from '@/lib/telegram';
+import { scrapeTelegram, ScrapedTelegramArticle } from '@/lib/telegram-scraper';
 import { minHashDeduplicator, computeContentHash, generateMinHashSignature } from '@/lib/minhash';
 import { sendPushNotification } from '@/lib/push-notifications';
 
-type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | TelegramArticle) & {
+type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | TelegramArticle | ScrapedTelegramArticle) & {
   id: string;
   contentHash: string;
   minHash: number[];
@@ -106,12 +107,14 @@ export async function POST(request: NextRequest) {
  */
 async function refreshNewsCache() {
   try {
-    // Determine which Twitter source to use
+    // Determine which sources to use
     const useRealTwitter = !!process.env.APIFY_API_TOKEN;
+    const useRealTelegram = !!process.env.TELEGRAM_BOT_TOKEN;
     const twitterSource = useRealTwitter ? 'Apify' : 'Mock';
+    const telegramSource = useRealTelegram ? 'Bot API' : 'Mock';
 
     // Fetch from multiple sources in parallel
-    console.log(`🔄 Fetching from Perplexity, Twitter (${twitterSource}), and Telegram...`);
+    console.log(`🔄 Fetching from Perplexity, Twitter (${twitterSource}), and Telegram (${telegramSource})...`);
     const [perplexityArticles, twitterArticles, telegramArticles] = await Promise.all([
       fetchPerplexityNews(),
       useRealTwitter
@@ -120,21 +123,31 @@ async function refreshNewsCache() {
             return getMockTwitterArticles();
           })
         : getMockTwitterArticles(),
-      getMockTelegramArticles(), // Using mock data for now (replace with fetchTelegramNews() when bot token is available)
+      useRealTelegram
+        ? scrapeTelegram(20).catch(err => {
+            console.error('❌ Telegram scraping failed, using mock data:', err);
+            return getMockTelegramArticles();
+          })
+        : getMockTelegramArticles(),
     ]);
 
     console.log(`📰 Received ${perplexityArticles.length} articles from Perplexity`);
     console.log(`🐦 Received ${twitterArticles.length} articles from Twitter (${twitterSource})`);
-    console.log(`📱 Received ${telegramArticles.length} articles from Telegram`);
+    console.log(`📱 Received ${telegramArticles.length} articles from Telegram (${telegramSource})`);
 
-    // Normalize Twitter articles to have 'topics' field (map from 'tags')
+    // Normalize Twitter and Telegram articles to have 'topics' field (map from 'tags')
     const normalizedTwitterArticles = twitterArticles.map(article => ({
       ...article,
       topics: ('tags' in article ? article.tags : article.topics) || []
     }));
 
+    const normalizedTelegramArticles = telegramArticles.map(article => ({
+      ...article,
+      topics: ('tags' in article ? article.tags : article.topics) || []
+    }));
+
     // Combine articles from all sources
-    const newArticles = [...perplexityArticles, ...normalizedTwitterArticles, ...telegramArticles];
+    const newArticles = [...perplexityArticles, ...normalizedTwitterArticles, ...normalizedTelegramArticles];
 
     if (newArticles.length === 0) {
       console.log('⚠️ No new articles returned from any source');
