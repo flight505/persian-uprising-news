@@ -209,3 +209,4 @@ My role is to synthesize and analyze the search results that have been provided 
  ○ (pwa)   Scope: /
  ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
  ✓ Ready in 2.1s
+   Reload env: .env

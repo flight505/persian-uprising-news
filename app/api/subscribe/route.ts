@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-
-interface PushSubscription {
-  endpoint: string;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
-interface SubscriptionData extends PushSubscription {
-  id: string;
-  userAgent?: string;
-  subscribedAt: number;
-  lastNotified?: number;
-}
-
-// In-memory storage for development (will be replaced with DynamoDB in production)
-let subscriptions: SubscriptionData[] = [];
+import {
+  getActiveSubscriptions,
+  addSubscription,
+  removeSubscription,
+  findSubscription,
+  type SubscriptionData
+} from '@/lib/subscriptions';
 
 /**
  * POST /api/subscribe
@@ -53,7 +42,7 @@ export async function POST(request: NextRequest) {
       .substring(0, 16);
 
     // Check if already subscribed
-    const existing = subscriptions.find(sub => sub.id === endpointHash);
+    const existing = findSubscription(endpointHash);
     if (existing) {
       console.log(`✅ Subscription already exists: ${endpointHash}`);
       return NextResponse.json({
@@ -72,10 +61,10 @@ export async function POST(request: NextRequest) {
       subscribedAt: Date.now(),
     };
 
-    subscriptions.push(newSubscription);
+    addSubscription(newSubscription);
 
     console.log(`📬 New push subscription: ${endpointHash}`);
-    console.log(`📊 Total subscriptions: ${subscriptions.length}`);
+    console.log(`📊 Total subscriptions: ${getActiveSubscriptions().length}`);
 
     return NextResponse.json({
       success: true,
@@ -116,12 +105,12 @@ export async function DELETE(request: NextRequest) {
       .substring(0, 16);
 
     // Remove subscription
-    const initialLength = subscriptions.length;
-    subscriptions = subscriptions.filter(sub => sub.id !== endpointHash);
+    const existing = findSubscription(endpointHash);
+    removeSubscription(endpointHash);
 
-    if (subscriptions.length < initialLength) {
+    if (existing) {
       console.log(`🗑️ Removed subscription: ${endpointHash}`);
-      console.log(`📊 Total subscriptions: ${subscriptions.length}`);
+      console.log(`📊 Total subscriptions: ${getActiveSubscriptions().length}`);
 
       return NextResponse.json({
         success: true,
@@ -148,6 +137,8 @@ export async function DELETE(request: NextRequest) {
  * Get subscription statistics (admin/debug)
  */
 export async function GET(request: NextRequest) {
+  const subscriptions = getActiveSubscriptions();
+
   return NextResponse.json({
     totalSubscriptions: subscriptions.length,
     subscriptions: subscriptions.map(sub => ({
@@ -157,9 +148,4 @@ export async function GET(request: NextRequest) {
       userAgent: sub.userAgent,
     })),
   });
-}
-
-// Export subscriptions for use by push sender
-export function getActiveSubscriptions(): SubscriptionData[] {
-  return subscriptions;
 }

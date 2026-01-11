@@ -3,7 +3,7 @@ import { fetchPerplexityNews, PerplexityArticle } from '@/lib/perplexity';
 import { getMockTwitterArticles, TwitterArticle } from '@/lib/twitter';
 import { getMockTelegramArticles, TelegramArticle } from '@/lib/telegram';
 import { minHashDeduplicator, computeContentHash, generateMinHashSignature } from '@/lib/minhash';
-import { sendPushNotification } from '../push/route';
+import { sendPushNotification } from '@/lib/push-notifications';
 
 type Article = (PerplexityArticle | TwitterArticle | TelegramArticle) & {
   id: string;

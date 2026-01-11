@@ -10,7 +10,8 @@ const DB_VERSION = 1;
 const ARTICLES_STORE = 'articles';
 const PENDING_REPORTS_STORE = 'pendingReports';
 
-interface Article {
+// Article without cachedAt (for input)
+type ArticleInput = {
   id: string;
   title: string;
   summary: string;
@@ -20,6 +21,10 @@ interface Article {
   source?: 'perplexity' | 'twitter' | 'telegram';
   author?: string;
   channelName?: string;
+};
+
+// Article with cachedAt (for storage)
+interface Article extends ArticleInput {
   cachedAt: number;
 }
 
@@ -84,7 +89,7 @@ class OfflineDB {
   /**
    * Store articles for offline access (keeps last 50)
    */
-  async cacheArticles(articles: Article[]): Promise<void> {
+  async cacheArticles(articles: ArticleInput[]): Promise<void> {
     if (!this.db) await this.init();
 
     const transaction = this.db!.transaction([ARTICLES_STORE], 'readwrite');
