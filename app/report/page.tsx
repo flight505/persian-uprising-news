@@ -22,6 +22,7 @@ interface FormData {
     address: string;
   };
   images: File[];
+  imageUrls: string[];
 }
 
 export default function ReportPage() {
@@ -36,6 +37,7 @@ export default function ReportPage() {
       address: '',
     },
     images: [],
+    imageUrls: [],
   });
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -44,6 +46,8 @@ export default function ReportPage() {
   const [success, setSuccess] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [queuedOffline, setQueuedOffline] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
   // Monitor online/offline status
   useEffect(() => {
@@ -80,7 +84,7 @@ export default function ReportPage() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
     // Limit to 3 images
@@ -89,18 +93,59 @@ export default function ReportPage() {
       return;
     }
 
-    // Validate file sizes (max 5MB each)
-    const invalidFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    // Validate file sizes (max 10MB each)
+    const invalidFiles = files.filter(file => file.size > 10 * 1024 * 1024);
     if (invalidFiles.length > 0) {
-      setError('Each image must be under 5MB');
+      setError('Each image must be under 10MB');
       return;
     }
 
-    // Create preview URLs
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...prev, ...newPreviews]);
-    setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
     setError(null);
+    setUploadingImages(true);
+    setUploadProgress('Uploading images...');
+
+    try {
+      const uploadedUrls: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress(`Uploading image ${i + 1} of ${files.length}...`);
+
+        const formDataObj = new FormData();
+        formDataObj.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formDataObj,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to upload image');
+        }
+
+        const data = await response.json();
+        uploadedUrls.push(data.url);
+      }
+
+      // Create preview URLs and update form data
+      const newPreviews = uploadedUrls;
+      setImagePreviews(prev => [...prev, ...newPreviews]);
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...files],
+        imageUrls: [...prev.imageUrls, ...uploadedUrls]
+      }));
+
+      setUploadProgress('');
+      console.log(`✅ Uploaded ${uploadedUrls.length} images to Cloudflare`);
+
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload images');
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -108,6 +153,7 @@ export default function ReportPage() {
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index),
     }));
   };
 
@@ -146,6 +192,7 @@ export default function ReportPage() {
           lon: formData.location.lon!,
           address: formData.location.address,
         },
+        images: formData.imageUrls, // Cloudflare URLs
         timestamp: Date.now(),
       };
 
@@ -361,16 +408,26 @@ export default function ReportPage() {
                 Images (Optional)
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Upload up to 3 images (max 5MB each). Supported formats: JPG, PNG, WebP
+                Upload up to 3 images (max 10MB each). Supported formats: JPG, PNG, WebP, GIF
               </p>
 
-              {imagePreviews.length < 3 && (
+              {uploadingImages && (
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm text-blue-800 dark:text-blue-200">{uploadProgress}</span>
+                  </div>
+                </div>
+              )}
+
+              {imagePreviews.length < 3 && !uploadingImages && (
                 <label className="block">
                   <input
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                     multiple
                     onChange={handleImageUpload}
+                    disabled={uploadingImages}
                     className="hidden"
                   />
                   <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-500 cursor-pointer transition">

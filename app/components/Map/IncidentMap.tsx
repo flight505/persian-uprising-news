@@ -249,6 +249,21 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick }
                   </p>
                 )}
 
+                {/* Images */}
+                {incident.images && incident.images.length > 0 && (
+                  <div className="my-2 grid grid-cols-2 gap-1">
+                    {incident.images.map((imageUrl, idx) => (
+                      <img
+                        key={idx}
+                        src={imageUrl}
+                        alt={`Incident ${idx + 1}`}
+                        className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-80 transition"
+                        onClick={() => window.open(imageUrl, '_blank')}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 {/* Timestamp */}
                 <p className="text-xs text-gray-400">{formatTimestamp(incident.timestamp)}</p>
 
