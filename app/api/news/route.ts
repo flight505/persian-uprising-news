@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPerplexityNews, PerplexityArticle } from '@/lib/perplexity';
 import { getMockTwitterArticles, TwitterArticle } from '@/lib/twitter';
+import { scrapeTwitter, ScrapedArticle as TwitterScrapedArticle } from '@/lib/twitter-scraper';
 import { getMockTelegramArticles, TelegramArticle } from '@/lib/telegram';
 import { minHashDeduplicator, computeContentHash, generateMinHashSignature } from '@/lib/minhash';
 import { sendPushNotification } from '@/lib/push-notifications';
 
-type Article = (PerplexityArticle | TwitterArticle | TelegramArticle) & {
+type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | TelegramArticle) & {
   id: string;
   contentHash: string;
   minHash: number[];
@@ -102,16 +103,25 @@ export async function POST(request: NextRequest) {
  */
 async function refreshNewsCache() {
   try {
+    // Determine which Twitter source to use
+    const useRealTwitter = !!process.env.APIFY_API_TOKEN;
+    const twitterSource = useRealTwitter ? 'Apify' : 'Mock';
+
     // Fetch from multiple sources in parallel
-    console.log('🔄 Fetching from Perplexity, Twitter, and Telegram...');
+    console.log(`🔄 Fetching from Perplexity, Twitter (${twitterSource}), and Telegram...`);
     const [perplexityArticles, twitterArticles, telegramArticles] = await Promise.all([
       fetchPerplexityNews(),
-      getMockTwitterArticles(), // Using mock data for now (replace with fetchTwitterNews() when Apify token is available)
+      useRealTwitter
+        ? scrapeTwitter(50, 24).catch(err => {
+            console.error('❌ Twitter scraping failed, using mock data:', err);
+            return getMockTwitterArticles();
+          })
+        : getMockTwitterArticles(),
       getMockTelegramArticles(), // Using mock data for now (replace with fetchTelegramNews() when bot token is available)
     ]);
 
     console.log(`📰 Received ${perplexityArticles.length} articles from Perplexity`);
-    console.log(`🐦 Received ${twitterArticles.length} articles from Twitter`);
+    console.log(`🐦 Received ${twitterArticles.length} articles from Twitter (${twitterSource})`);
     console.log(`📱 Received ${telegramArticles.length} articles from Telegram`);
 
     // Combine articles from all sources
