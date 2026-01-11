@@ -41,7 +41,7 @@ export async function uploadImageToCloudflare(
       formData.append('file', file);
     } else {
       // For Buffer/server-side uploads
-      const blob = new Blob([file]);
+      const blob = new Blob([new Uint8Array(file)]);
       formData.append('file', blob, filename);
     }
 
