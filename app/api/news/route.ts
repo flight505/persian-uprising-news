@@ -11,6 +11,7 @@ type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | Tel
   contentHash: string;
   minHash: number[];
   createdAt: number;
+  topics?: string[]; // Optional field for filtering (normalized from tags for Twitter)
 };
 
 // In-memory cache for development (will be replaced with DynamoDB in production)
@@ -44,7 +45,9 @@ export async function GET(request: NextRequest) {
     // Filter by topic if requested
     let articles = articlesCache;
     if (topicFilter) {
-      articles = articles.filter(article => article.topics.includes(topicFilter));
+      articles = articles.filter(article =>
+        article.topics?.includes(topicFilter) || false
+      );
     }
 
     // Sort by createdAt (newest first)
@@ -124,8 +127,14 @@ async function refreshNewsCache() {
     console.log(`🐦 Received ${twitterArticles.length} articles from Twitter (${twitterSource})`);
     console.log(`📱 Received ${telegramArticles.length} articles from Telegram`);
 
+    // Normalize Twitter articles to have 'topics' field (map from 'tags')
+    const normalizedTwitterArticles = twitterArticles.map(article => ({
+      ...article,
+      topics: ('tags' in article ? article.tags : article.topics) || []
+    }));
+
     // Combine articles from all sources
-    const newArticles = [...perplexityArticles, ...twitterArticles, ...telegramArticles];
+    const newArticles = [...perplexityArticles, ...normalizedTwitterArticles, ...telegramArticles];
 
     if (newArticles.length === 0) {
       console.log('⚠️ No new articles returned from any source');
