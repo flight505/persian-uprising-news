@@ -88,7 +88,7 @@ const IRAN_CENTER: [number, number] = [32.4279, 53.6880];
 const IRAN_BOUNDS: [[number, number], [number, number]] = [[24.5, 43.5], [40.0, 64.0]];
 
 // Component to reset map view to Iran and handle marker centering
-function MapController({ centerOn }: { centerOn: [number, number] | null }) {
+function MapController({ centerOn, onReset }: { centerOn: [number, number] | null; onReset?: () => void }) {
   const map = useMap();
 
   useEffect(() => {
@@ -106,6 +106,58 @@ function MapController({ centerOn }: { centerOn: [number, number] | null }) {
       });
     }
   }, [centerOn, map]);
+
+  // Reset view button
+  useEffect(() => {
+    const resetControl = L.Control.extend({
+      options: {
+        position: 'topleft',
+      },
+      onAdd: function () {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        container.innerHTML = `
+          <button
+            style="
+              background: white;
+              width: 34px;
+              height: 34px;
+              border: 2px solid rgba(0,0,0,0.2);
+              border-radius: 4px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 18px;
+              transition: background 0.2s;
+            "
+            title="Reset view to Iran"
+            onmouseover="this.style.background='#f4f4f4'"
+            onmouseout="this.style.background='white'"
+          >
+            🏠
+          </button>
+        `;
+
+        container.onclick = function (e) {
+          e.stopPropagation();
+          map.flyTo(IRAN_CENTER, 5, {
+            animate: true,
+            duration: 0.8,
+          });
+          onReset?.();
+        };
+
+        return container;
+      },
+    });
+
+    const control = new resetControl();
+    map.addControl(control);
+
+    return () => {
+      map.removeControl(control);
+    };
+  }, [map, onReset]);
 
   return null;
 }
@@ -280,7 +332,10 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
         </BaseLayer>
       </LayersControl>
 
-      <MapController centerOn={centerOn} />
+      <MapController
+        centerOn={centerOn}
+        onReset={() => setCenterOn(null)}
+      />
       <HeatmapLayer incidents={filteredIncidents} show={showHeatmap} />
 
       <MarkerClusterGroup
