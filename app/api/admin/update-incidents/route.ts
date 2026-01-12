@@ -72,16 +72,16 @@ const INCIDENT_UPDATES = [
 ];
 
 export async function POST(request: NextRequest) {
-  // TEMP DISABLED: Updating with Telegram URLs (verify post IDs before production use)
-  // if (process.env.ADMIN_SECRET) {
-  //   const adminSecret = request.headers.get('x-admin-secret');
-  //   if (adminSecret !== process.env.ADMIN_SECRET) {
-  //     return NextResponse.json(
-  //       { error: 'Unauthorized' },
-  //       { status: 401 }
-  //     );
-  //   }
-  // }
+  // Admin authentication (re-enabled after Telegram URL update)
+  if (process.env.ADMIN_SECRET) {
+    const adminSecret = request.headers.get('x-admin-secret');
+    if (adminSecret !== process.env.ADMIN_SECRET) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+  }
 
   if (!isFirestoreAvailable()) {
     return NextResponse.json(
