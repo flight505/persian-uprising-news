@@ -1,137 +1,163 @@
+/**
+ * Translation API Route
+ * SEC-001 & SEC-002: Redis rate limiting + Zod validation
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { translateText, detectLanguage, type SupportedLanguage } from '@/lib/translation-robust';
-
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 100;
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
-
-function getClientIP(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0] : req.headers.get('x-real-ip') || 'unknown';
-  return ip;
-}
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (record.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
-
-function cleanupRateLimitMap() {
-  const now = Date.now();
-  for (const [ip, record] of rateLimitMap.entries()) {
-    if (now > record.resetTime) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}
-
-setInterval(cleanupRateLimitMap, 5 * 60 * 1000); // Every 5 minutes
-
-interface TranslateRequestBody {
-  text: string;
-  sourceLang?: SupportedLanguage;
-  targetLang: SupportedLanguage;
-  autoDetect?: boolean;
-}
+import { ServiceContainer } from '@/lib/services/container';
+import { createRateLimitHeaders } from '@/lib/services/rate-limit/i-rate-limiter';
+import { getClientIP, generateIdentifier } from '@/lib/services/rate-limit/redis-rate-limiter';
+import {
+  validateTranslationRequest,
+  formatZodErrors,
+  sanitizeTranslationText,
+} from '@/lib/validators/translation-validator';
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIP(req.headers);
+  const userAgent = req.headers.get('user-agent');
+  const identifier = generateIdentifier(ip, userAgent);
+
+  // Get rate limiter with detailed result
+  const rateLimiter = ServiceContainer.getTranslationRateLimiter();
+  const rateLimitResult = await rateLimiter.checkLimitWithResult(identifier);
+  const config = rateLimiter.getConfig();
+
+  if (!rateLimitResult.allowed) {
+    const headers = createRateLimitHeaders(rateLimitResult, config);
+    return NextResponse.json(
+      {
+        error: 'Rate limit exceeded',
+        message: `Maximum ${config.maxRequests} requests per hour. Please try again later.`,
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      {
+        status: 429,
+        headers,
+      }
+    );
+  }
+
   try {
-    const ip = getClientIP(req);
-
-    if (!checkRateLimit(ip)) {
+    // Parse request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { status: 429 }
-      );
-    }
-
-    const body: TranslateRequestBody = await req.json();
-    const { text, sourceLang, targetLang, autoDetect = false } = body;
-
-    if (!text || typeof text !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid request: text is required' },
+        {
+          error: 'Invalid JSON',
+          message: 'Request body must be valid JSON',
+        },
         { status: 400 }
       );
     }
 
-    if (!targetLang || !['en', 'fa'].includes(targetLang)) {
+    // Validate input with Zod
+    const validation = validateTranslationRequest(body);
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid request: targetLang must be "en" or "fa"' },
+        {
+          error: 'Validation failed',
+          details: formatZodErrors(validation.error),
+        },
         { status: 400 }
       );
     }
 
-    if (text.length > 10000) {
+    const { text, sourceLang, targetLang, autoDetect } = validation.data;
+
+    // Sanitize text before processing
+    const sanitizedText = sanitizeTranslationText(text);
+
+    if (sanitizedText.length === 0) {
       return NextResponse.json(
-        { error: 'Text too long (max 10000 characters)' },
+        {
+          error: 'Invalid text',
+          message: 'Text is empty after sanitization',
+        },
         { status: 400 }
       );
     }
 
     let finalSourceLang: SupportedLanguage = sourceLang || 'en';
 
+    // Auto-detect language if needed
     if (autoDetect || !sourceLang) {
-      finalSourceLang = await detectLanguage(text);
+      finalSourceLang = await detectLanguage(sanitizedText);
     }
 
+    // Skip translation if source equals target
     if (finalSourceLang === targetLang) {
-      return NextResponse.json({
-        translatedText: text,
-        detectedLanguage: finalSourceLang,
-        cached: false,
-      });
+      const headers = createRateLimitHeaders(rateLimitResult, config);
+      return NextResponse.json(
+        {
+          translatedText: sanitizedText,
+          detectedLanguage: finalSourceLang,
+          cached: false,
+          skipped: true,
+        },
+        { headers }
+      );
     }
 
-    const result = await translateText(text, finalSourceLang, targetLang);
+    // Perform translation
+    const result = await translateText(sanitizedText, finalSourceLang, targetLang);
 
-    return NextResponse.json({
-      translatedText: result.translatedText,
-      detectedLanguage: result.detectedLanguage || finalSourceLang,
-      sourceLang: finalSourceLang,
-      targetLang,
-      tier: result.tier, // Show which translation service was used
-      cached: result.tier === 'cache',
-    });
+    const headers = createRateLimitHeaders(rateLimitResult, config);
+    return NextResponse.json(
+      {
+        translatedText: result.translatedText,
+        detectedLanguage: result.detectedLanguage || finalSourceLang,
+        sourceLang: finalSourceLang,
+        targetLang,
+        tier: result.tier,
+        cached: result.tier === 'cache',
+      },
+      { headers }
+    );
   } catch (error) {
-    // With robust translation, this should never happen
-    // If it does, return a helpful error message
-    console.error('Translation API unexpected error:', error);
+    console.error('Translation API error:', error);
 
-    return NextResponse.json({
-      error: 'Translation request failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      suggestion: 'Please check your request format and try again',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Translation failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET() {
+  const rateLimiter = ServiceContainer.getTranslationRateLimiter();
+  const config = rateLimiter.getConfig();
+
   return NextResponse.json(
     {
-      message: 'Translation API endpoint',
+      service: 'Translation API',
       supportedLanguages: ['en', 'fa'],
-      rateLimit: `${RATE_LIMIT} requests per hour per IP`,
+      rateLimit: {
+        limit: config.maxRequests,
+        window: `${config.windowMs / 1000} seconds`,
+        algorithm: 'sliding window',
+      },
       usage: {
         method: 'POST',
+        contentType: 'application/json',
         body: {
-          text: 'string (required)',
+          text: 'string (required, max 10000 chars)',
           sourceLang: 'en | fa (optional, auto-detect if not provided)',
           targetLang: 'en | fa (required)',
           autoDetect: 'boolean (optional, default: false)',
         },
+      },
+      headers: {
+        'X-RateLimit-Limit': 'Maximum requests per window',
+        'X-RateLimit-Remaining': 'Remaining requests in current window',
+        'X-RateLimit-Reset': 'Unix timestamp when window resets',
       },
     },
     { status: 200 }

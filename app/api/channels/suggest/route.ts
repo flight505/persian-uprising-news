@@ -1,16 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+/**
+ * Channel Suggestion API Route
+ * SEC-001 & SEC-002: Redis rate limiting + Zod validation
+ */
 
-// Validation schema
-const suggestionSchema = z.object({
-  type: z.enum(['telegram', 'twitter', 'reddit', 'instagram', 'youtube', 'rss', 'other']),
-  handle: z.string().min(1).max(200),
-  displayName: z.string().min(1).max(200).optional(),
-  description: z.string().max(500).optional(),
-  url: z.string().url().optional(),
-  submitterEmail: z.string().email().optional(),
-  reason: z.string().max(1000),
-});
+import { NextRequest, NextResponse } from 'next/server';
+import { ServiceContainer } from '@/lib/services/container';
+import { createRateLimitHeaders } from '@/lib/services/rate-limit/i-rate-limiter';
+import { getClientIP, generateIdentifier } from '@/lib/services/rate-limit/redis-rate-limiter';
+import {
+  validateCreateChannelSuggestion,
+  validateUpdateChannelSuggestion,
+  validateChannelSuggestionQuery,
+  formatZodErrors,
+  normalizeHandle,
+  type CreateChannelSuggestionInput,
+} from '@/lib/validators/channel-validator';
 
 export interface ChannelSuggestion {
   id: string;
@@ -33,22 +37,75 @@ export interface ChannelSuggestion {
  * Submit a new channel suggestion
  */
 export async function POST(req: NextRequest) {
+  const ip = getClientIP(req.headers);
+  const userAgent = req.headers.get('user-agent');
+  const identifier = generateIdentifier(ip, userAgent);
+
+  // Rate limit check
+  const rateLimiter = ServiceContainer.getChannelRateLimiter();
+  const rateLimitResult = await rateLimiter.checkLimitWithResult(identifier);
+  const config = rateLimiter.getConfig();
+
+  if (!rateLimitResult.allowed) {
+    const headers = createRateLimitHeaders(rateLimitResult, config);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Rate limit exceeded',
+        message: `Maximum ${config.maxRequests} suggestions per hour. Please try again later.`,
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      { status: 429, headers }
+    );
+  }
+
   try {
-    const body = await req.json();
+    // Parse request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid JSON',
+          message: 'Request body must be valid JSON',
+        },
+        { status: 400 }
+      );
+    }
 
-    // Validate input
-    const validatedData = suggestionSchema.parse(body);
+    // Validate input with Zod (SEC-002)
+    const validation = validateCreateChannelSuggestion(body);
 
-    // Rate limiting: max 5 suggestions per IP per hour
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    // TODO: Implement Redis-based rate limiting
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: formatZodErrors(validation.error),
+        },
+        { status: 400 }
+      );
+    }
+
+    const validatedData: CreateChannelSuggestionInput = validation.data;
 
     // Generate suggestion ID
     const suggestionId = `suggestion_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Normalize handle for storage
+    const normalizedHandle = normalizeHandle(validatedData.handle, validatedData.type);
+
     const suggestion: ChannelSuggestion = {
       id: suggestionId,
-      ...validatedData,
+      type: validatedData.type,
+      handle: normalizedHandle,
+      displayName: validatedData.displayName,
+      description: validatedData.description,
+      url: validatedData.url,
+      submitterEmail: validatedData.submitterEmail,
+      reason: validatedData.reason.trim(),
       status: 'pending',
       submittedAt: Date.now(),
     };
@@ -58,33 +115,27 @@ export async function POST(req: NextRequest) {
     if (isFirestoreAvailable()) {
       const db = getDb();
       await db!.collection('channel_suggestions').doc(suggestionId).set(suggestion);
+      console.log(`[Channels] New suggestion: ${suggestion.type}/${suggestion.handle} (ID: ${suggestionId})`);
     } else {
-      // Fallback: In-memory storage (dev mode)
-      console.log('📝 Channel suggestion (in-memory):', suggestion);
+      console.log('[Channels] Firestore unavailable, suggestion logged:', suggestion);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Thank you! Your channel suggestion has been submitted for review.',
-      suggestionId,
-    });
+    const headers = createRateLimitHeaders(rateLimitResult, config);
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Thank you! Your channel suggestion has been submitted for review.',
+        suggestionId,
+      },
+      { headers }
+    );
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Invalid input',
-          errors: error.issues,
-        },
-        { status: 400 }
-      );
-    }
-
     console.error('Error submitting channel suggestion:', error);
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to submit suggestion. Please try again.',
+        error: 'Failed to submit suggestion',
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -93,26 +144,48 @@ export async function POST(req: NextRequest) {
 
 /**
  * GET /api/channels/suggest
- * Get all channel suggestions (for admin review)
+ * Get all channel suggestions (admin only)
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status') as 'pending' | 'approved' | 'rejected' | null;
 
-    // Auth check (simple admin secret for now)
+    // Auth check (simple admin secret)
     const adminSecret = req.headers.get('x-admin-secret');
     if (adminSecret !== process.env.ADMIN_SECRET) {
       return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Validate query parameters
+    const queryParams: Record<string, string | null> = {
+      status: searchParams.get('status'),
+      type: searchParams.get('type'),
+      limit: searchParams.get('limit'),
+      offset: searchParams.get('offset'),
+    };
+
+    const validation = validateChannelSuggestionQuery(queryParams);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid query parameters',
+          details: formatZodErrors(validation.error),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { status, type, limit, offset } = validation.data;
+
     const { getDb, isFirestoreAvailable } = await import('@/lib/firestore');
     if (!isFirestoreAvailable()) {
       return NextResponse.json(
-        { success: false, message: 'Database not configured' },
+        { success: false, error: 'Database not configured' },
         { status: 500 }
       );
     }
@@ -121,21 +194,26 @@ export async function GET(req: NextRequest) {
     let query = db!.collection('channel_suggestions').orderBy('submittedAt', 'desc');
 
     if (status) {
-      query = query.where('status', '==', status) as any;
+      query = query.where('status', '==', status) as FirebaseFirestore.Query;
     }
 
-    const snapshot = await query.limit(100).get();
+    if (type) {
+      query = query.where('type', '==', type) as FirebaseFirestore.Query;
+    }
+
+    const snapshot = await query.offset(offset).limit(limit).get();
     const suggestions = snapshot.docs.map((doc) => doc.data());
 
     return NextResponse.json({
       success: true,
       suggestions,
       count: suggestions.length,
+      pagination: { limit, offset },
     });
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch suggestions' },
+      { success: false, error: 'Failed to fetch suggestions' },
       { status: 500 }
     );
   }
@@ -143,26 +221,49 @@ export async function GET(req: NextRequest) {
 
 /**
  * PATCH /api/channels/suggest
- * Update suggestion status (approve/reject)
+ * Update suggestion status (admin only)
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { suggestionId, status, rejectionReason } = body;
-
     // Auth check
     const adminSecret = req.headers.get('x-admin-secret');
     if (adminSecret !== process.env.ADMIN_SECRET) {
       return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    // Parse and validate body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+
+    const validation = validateUpdateChannelSuggestion(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: formatZodErrors(validation.error),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { suggestionId, status, rejectionReason } = validation.data;
+
     const { getDb, isFirestoreAvailable } = await import('@/lib/firestore');
     if (!isFirestoreAvailable()) {
       return NextResponse.json(
-        { success: false, message: 'Database not configured' },
+        { success: false, error: 'Database not configured' },
         { status: 500 }
       );
     }
@@ -178,6 +279,8 @@ export async function PATCH(req: NextRequest) {
         ...(rejectionReason && { rejectionReason }),
       });
 
+    console.log(`[Channels] Suggestion ${suggestionId} ${status}`);
+
     return NextResponse.json({
       success: true,
       message: `Suggestion ${status}`,
@@ -185,7 +288,7 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     console.error('Error updating suggestion:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to update suggestion' },
+      { success: false, error: 'Failed to update suggestion' },
       { status: 500 }
     );
   }
