@@ -19,6 +19,10 @@ import { StringSession } from 'telegram/sessions';
 import * as readline from 'readline/promises';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load .env file
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const rl = readline.createInterface({
   input: process.stdin,

@@ -18,6 +18,14 @@
  * - ❌ Slightly more complex setup
  */
 
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load .env file for local development
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(process.cwd(), '.env') });
+}
+
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { NewMessage, NewMessageEvent } from 'telegram/events';
@@ -30,13 +38,10 @@ const SESSION_STRING = process.env.TELEGRAM_SESSION_STRING || '';
 
 // Channels to monitor (public channels, no admin access needed!)
 const MONITORED_CHANNELS = [
-  '@BBCPersian',         // BBC Persian
-  '@manoto_tv',          // Manoto TV
-  '@IranIntlTV',         // Iran International
-  '@RadioFarda',         // Radio Farda
-  '@VOAFarsi',           // Voice of America Farsi
-  '@persianvoa',         // VOA Persian
-  '@iran_intl_fa',       // Iran International (Farsi)
+  '@BBCPersian',         // BBC Persian - verified working
+  '@IranIntlTV',         // Iran International - verified working
+  '@RadioFarda',         // Radio Farda - verified working
+  // Note: Add more channels as needed. Verify usernames at t.me/username
 ];
 
 // Keywords to filter for uprising-related content

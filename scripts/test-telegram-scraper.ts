@@ -10,6 +10,12 @@
  * Run with: npx tsx scripts/test-telegram-scraper.ts
  */
 
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load .env file
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+
 import { initTelegramClient, fetchRecentMessages } from '../lib/telegram-user-api';
 
 async function test() {
