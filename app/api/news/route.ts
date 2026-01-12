@@ -167,7 +167,7 @@ async function refreshNewsCache(): Promise<number> {
     console.log(`📱 Received ${telegramArticles.length} articles from Telegram (${telegramSource})`);
 
     // Normalize Twitter and Telegram articles to have 'topics' field (map from 'tags')
-    const normalizedTwitterArticles = twitterArticles.map(article => ({
+    const normalizedTwitterArticles = (twitterArticles as any[]).map(article => ({
       ...article,
       topics: ('tags' in article ? article.tags : article.topics) || []
     }));
