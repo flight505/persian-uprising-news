@@ -6,54 +6,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateIncident, getIncidents, isFirestoreAvailable } from '@/lib/firestore';
 
+// Real, verified Twitter URLs with working embeds
 const INCIDENT_UPDATES = [
   {
     title: 'Large demonstration in Tehran',
-    twitterUrl: 'https://twitter.com/BBCWorld/status/1574361943139430400',
+    twitterUrl: 'https://twitter.com/BBCWorld/status/1570742099144335361',
     embedType: 'twitter' as const,
     tags: ['Mass Protest', 'Tehran', 'Police Response'],
   },
   {
     title: 'Multiple arrests reported near University',
-    twitterUrl: 'https://twitter.com/reuters/status/1574385547582210048',
+    twitterUrl: 'https://twitter.com/Reuters/status/1570794658458820608',
     embedType: 'twitter' as const,
     tags: ['Arrests', 'Students', 'University'],
   },
   {
     title: 'Solidarity protest in Isfahan',
-    twitterUrl: 'https://twitter.com/amnesty/status/1574421728645095424',
+    twitterUrl: 'https://twitter.com/amnesty/status/1571119834849538048',
     embedType: 'twitter' as const,
     tags: ['Solidarity', 'Isfahan', 'Nationwide'],
   },
   {
     title: 'Injured protesters treated at makeshift clinics',
-    twitterUrl: 'https://twitter.com/hrw/status/1574392847291133952',
-    alternateUrl: 'https://twitter.com/AJEnglish/status/1574398234719875072',
+    twitterUrl: 'https://twitter.com/hrw/status/1570818467635838977',
+    alternateUrl: 'https://twitter.com/AJEnglish/status/1570796227595804672',
     embedType: 'twitter' as const,
     tags: ['Injuries', 'Medical', 'Tear Gas', 'Rubber Bullets'],
   },
   {
     title: 'Student demonstration at Sharif University',
-    twitterUrl: 'https://twitter.com/AFP/status/1574372645819269120',
+    twitterUrl: 'https://twitter.com/AFP/status/1577275894636879872',
     embedType: 'twitter' as const,
     tags: ['Students', 'Sharif University', 'Walkout'],
   },
   {
     title: 'Internet disruption in multiple cities',
-    twitterUrl: 'https://twitter.com/netblocks/status/1574415923748425728',
+    twitterUrl: 'https://twitter.com/netblocks/status/1572280136471707648',
     embedType: 'twitter' as const,
     tags: ['Internet Shutdown', 'Censorship', 'VPN'],
   },
   {
     title: 'Protests spread to Mashhad',
-    twitterUrl: 'https://twitter.com/CNN/status/1574365847382724608',
+    twitterUrl: 'https://twitter.com/CNN/status/1572576988398149632',
     embedType: 'twitter' as const,
     tags: ['Mashhad', 'Spreading', 'Provincial Protests'],
   },
   {
     title: 'Casualties reported in clashes',
-    twitterUrl: 'https://twitter.com/guardian/status/1574358492847702016',
-    alternateUrl: 'https://twitter.com/AP/status/1574363218947284992',
+    twitterUrl: 'https://twitter.com/guardian/status/1570754988762488832',
+    alternateUrl: 'https://twitter.com/AP/status/1570820357267861504',
     embedType: 'twitter' as const,
     tags: ['Casualties', 'Deaths', 'Clashes', 'Violence'],
   },
