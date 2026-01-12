@@ -63,15 +63,30 @@ export interface Article {
 }
 
 /**
+ * Remove undefined values from an object (Firestore doesn't accept undefined)
+ */
+function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  const cleaned: any = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      cleaned[key] = obj[key];
+    }
+  }
+  return cleaned;
+}
+
+/**
  * Save an article to Firestore
  */
 export async function saveArticle(article: Article): Promise<void> {
   if (!db) throw new Error('Firestore not initialized');
 
-  await db.collection('articles').doc(article.id).set({
+  const cleanedArticle = removeUndefined({
     ...article,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
+
+  await db.collection('articles').doc(article.id).set(cleanedArticle);
 }
 
 /**
@@ -84,10 +99,11 @@ export async function saveArticles(articles: Article[]): Promise<void> {
 
   articles.forEach((article) => {
     const docRef = db.collection('articles').doc(article.id);
-    batch.set(docRef, {
+    const cleanedArticle = removeUndefined({
       ...article,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+    batch.set(docRef, cleanedArticle);
   });
 
   await batch.commit();
