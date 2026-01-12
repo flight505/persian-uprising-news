@@ -223,7 +223,7 @@ export async function startRealtimeListener(
 
     // Get channel info
     const channel = await event.getChat();
-    const channelUsername = channel?.username ? `@${channel.username}` : '';
+    const channelUsername = (channel as any)?.username ? `@${(channel as any).username}` : '';
 
     if (!MONITORED_CHANNELS.includes(channelUsername)) return;
 
