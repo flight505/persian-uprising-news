@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Articles - public read, server write
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if false; // Only server can write
+    }
+    
+    // Incidents - public read, authenticated users can submit
+    match /incidents/{incidentId} {
+      allow read: if true;
+      allow create: if true; // Allow crowdsourced reports
+      allow update: if false; // Only server/admin can update
+      allow delete: if false; // Only admin can delete
+    }
+    
+    // Channel suggestions - anyone can submit, only server reads
+    match /channel_suggestions/{suggestionId} {
+      allow create: if true;
+      allow read, update, delete: if false; // Only server
+    }
+    
+    // Push subscriptions - public write, server read
+    match /push_subscriptions/{subscriptionId} {
+      allow create, delete: if true;
+      allow read, update: if false; // Only server
+    }
+  }
+}

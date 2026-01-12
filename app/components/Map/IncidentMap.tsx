@@ -87,8 +87,8 @@ function getIncidentIcon(type: string, verified: boolean) {
 const IRAN_CENTER: [number, number] = [32.4279, 53.6880];
 const IRAN_BOUNDS: [[number, number], [number, number]] = [[24.5, 43.5], [40.0, 64.0]];
 
-// Component to reset map view to Iran
-function MapController() {
+// Component to reset map view to Iran and handle marker centering
+function MapController({ centerOn }: { centerOn: [number, number] | null }) {
   const map = useMap();
 
   useEffect(() => {
@@ -96,6 +96,16 @@ function MapController() {
     map.setMaxBounds(IRAN_BOUNDS);
     map.setMinZoom(5);
   }, [map]);
+
+  useEffect(() => {
+    if (centerOn) {
+      // Pan to the marker with animation
+      map.flyTo(centerOn, Math.max(map.getZoom(), 10), {
+        animate: true,
+        duration: 0.5,
+      });
+    }
+  }, [centerOn, map]);
 
   return null;
 }
@@ -158,6 +168,7 @@ function HeatmapLayer({ incidents, show }: { incidents: Incident[]; show: boolea
 
 export default function IncidentMap({ incidents, selectedType, onIncidentClick, dateRange, showHeatmap = false }: IncidentMapProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
   const mapInitialized = useRef(false);
 
   useEffect(() => {
@@ -269,7 +280,7 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
         </BaseLayer>
       </LayersControl>
 
-      <MapController />
+      <MapController centerOn={centerOn} />
       <HeatmapLayer incidents={filteredIncidents} show={showHeatmap} />
 
       <MarkerClusterGroup
@@ -287,6 +298,8 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
             eventHandlers={{
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
+                // Center map on clicked marker to ensure popup is visible
+                setCenterOn([incident.location.lat, incident.location.lon]);
                 onIncidentClick?.(incident);
               },
             }}

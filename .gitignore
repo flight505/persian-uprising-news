@@ -46,3 +46,14 @@ samconfig.toml
 /public/workbox-*.js
 /public/sw.js.map
 /public/workbox-*.js.map
+
+# Firebase local config and credentials
+.firebaserc
+deposits-firebase-key.json
+firebase-debug.log
+
+# Backup files
+*.backup
+
+# Reference implementations (if you want to keep these local)
+Iran-main/

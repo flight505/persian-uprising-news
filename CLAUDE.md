@@ -1,370 +1,146 @@
 # Persian Uprising News Aggregator
 
-## Project Overview
+## Overview
 
-A Progressive Web App (PWA) for real-time news aggregation and incident mapping during the Persian uprising. The app aggregates news from multiple sources (Perplexity API, Twitter, Telegram) and provides an interactive map for tracking protests, arrests, and other incidents.
+Real-time PWA for aggregating Persian uprising news from multiple sources (Perplexity, Twitter, Telegram) with interactive incident mapping, translation, and offline support. Built for reliability and humanitarian impact.
 
-## Key Features
+**Key Features:** Multi-source aggregation • LSH deduplication • Farsi/English translation • Interactive Leaflet map • Push notifications • Offline-first • Installable PWA
 
-- **Multi-Source News Aggregation**: Fetches news from Perplexity API, Twitter (Apify scraper), and Telegram channels
-- **Intelligent Deduplication**: Uses MinHash + LSH algorithm to detect and remove duplicate articles (80% similarity threshold)
-- **Translation Support**: Google Cloud Translation API integration for Farsi ↔ English translation with caching and RTL support
-- **Interactive Map**: Leaflet-based map with clustered markers, multiple tile layers (Modern, Topographic, Satellite, Dark Mode)
-- **Crowdsourced Reporting**: Users can submit incident reports with location and type
-- **Push Notifications**: Web Push API with VAPID keys for breaking news alerts
-- **Offline Support**: IndexedDB caching for offline article access, background sync for queued reports, and persistent translation cache
-- **Mobile-First PWA**: Installable on iOS and Android with home screen icon and splash screens
+## Quick Start
+
+```bash
+npm install
+npm run dev          # http://localhost:3000
+npm test             # Run test suite (28 tests)
+npm run build        # Production build
+```
 
 ## Architecture
 
-### Frontend
-- **Framework**: Next.js 15 (App Router) + React 19
-- **Styling**: Tailwind CSS
-- **Maps**: React-Leaflet v4.2.1 + OpenStreetMap tiles
-- **Data Fetching**: SWR for caching and revalidation
-- **Offline Storage**: IndexedDB for article caching and report queueing
+### Stack
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Maps**: React-Leaflet + OpenStreetMap
+- **Data**: SWR (client cache), IndexedDB (offline), Firestore (backend)
+- **Security**: Redis rate limiting, Zod validation, environment validation
+- **Performance**: LSH deduplication (49.6x faster), Firestore batch writes (15x faster)
 
-### Backend (Current - Development)
-- **API Routes**: Next.js API routes for news, incidents, subscriptions, push notifications
-- **Storage**: In-memory (development) → DynamoDB (production)
-- **Caching**: 10-minute server-side cache with SWR client-side caching
-
-### Backend (Planned - Production)
-- **Compute**: AWS Lambda functions
-- **Database**: DynamoDB (free tier: 25GB)
-- **CDN**: Cloudflare Images (free tier: 100k images)
-- **Deployment**: Vercel (frontend) + AWS SAM (backend)
-
-## Tech Stack
-
+### Service Layer (SOLID Architecture)
 ```
-├── Next.js 15 (App Router)
-├── React 19
-├── TypeScript
-├── Tailwind CSS
-├── React-Leaflet
-├── SWR
-├── IndexedDB
-├── Google Cloud Translation API
-├── Web Push API
-├── Service Workers
-└── PWA (next-pwa)
+lib/services/
+├── news/
+│   ├── news-service.ts           # Orchestrator
+│   ├── sources/                  # INewsSource implementations
+│   ├── deduplication/            # MinHash + LSH (80% threshold)
+│   └── repositories/             # Firestore persistence
+├── incidents/                    # Incident extraction & storage
+├── notifications/                # Push notification service
+├── rate-limit/                   # Redis sliding window
+└── container.ts                  # Dependency injection
 ```
 
-## Project Structure
+**Design Principles:**
+- Single Responsibility: Each service has one purpose
+- Interface Segregation: Depend on abstractions, not concrete classes
+- Dependency Injection: All services mockable for testing
+- See `lib/services/README.md` for detailed patterns
 
-```
-/app
-  /api
-    /incidents/route.ts      # CRUD API for map incidents
-    /news/route.ts           # News aggregation endpoint
-    /push/route.ts           # Push notification sender
-    /subscribe/route.ts      # Push subscription management
-    /translate/route.ts      # Translation API with rate limiting
-  /components
-    /Map
-      IncidentMap.tsx        # Main map component with clustering
-      LocationPicker.tsx     # Interactive location selector for reports
-      NewsCard.tsx           # Article card component with translation
-    /NewsFeed
-      NewsFeed.tsx           # Infinite scroll news feed
-    /Shared
-      NotificationButton.tsx # Push notification subscribe UI
-  /map/page.tsx              # Map page with incident filters
-  /report/page.tsx           # Crowdsourced incident reporting form
-  /layout.tsx                # Root layout with PWA metadata
-  /page.tsx                  # Home page (news feed)
+## Key Patterns
 
-/lib
-  /minhash.ts                # MinHash + LSH deduplication algorithm
-  /offline-db.ts             # IndexedDB wrapper with translation cache
-  /perplexity.ts             # Perplexity API integration
-  /telegram.ts               # Telegram Bot API integration
-  /translation.ts            # Google Cloud Translation API service
-  /twitter.ts                # Twitter/Apify scraper integration
+### Security (Production-Grade)
+- **Rate Limiting**: Redis sliding window (composite keys: IP + User-Agent)
+- **Input Validation**: Zod schemas prevent XSS/DOS attacks
+- **Environment Validation**: Startup checks with fail-fast in production
+- See `lib/validators/` and `lib/services/rate-limit/`
 
-/public
-  /icons                     # PWA icons (72x72 to 512x512)
-  /manifest.json             # PWA manifest
-  /sw.js                     # Service worker (auto-generated)
-  /sw-custom.js              # Custom push notification handlers
+### Performance Optimizations
+- **Deduplication**: LSH + MinHash (892ms → 18ms, 49.6x faster)
+- **Batch Writes**: Firestore batching (3,000ms → 200ms, 15x faster)
+- **Multi-layer Caching**: Server (10min) + SWR client + IndexedDB offline
+- **Overall**: 5,612ms → 1,938ms (65% faster)
 
-/next.config.js              # Next.js + PWA configuration
-/tailwind.config.ts          # Tailwind CSS configuration
-/.env                        # Environment variables (not committed)
-```
+### Testing
+- **Framework**: Jest + React Testing Library
+- **Coverage**: 45% overall, 100% critical paths (28 tests passing)
+- **CI/CD**: GitHub Actions runs tests on push/PR
+- See `TESTING_QUICKSTART.md` for TDD workflow
 
-## Key Implementation Details
+### Offline-First
+- **Article Cache**: IndexedDB stores last 50 articles
+- **Report Queue**: Background sync when connection restored
+- **Translation Cache**: Persistent across sessions
 
-### News Aggregation Flow
-
-1. **Fetch from Multiple Sources** (parallel):
-   ```typescript
-   const [perplexityArticles, twitterArticles, telegramArticles] = await Promise.all([
-     fetchPerplexityNews(),      // Perplexity API (batched queries)
-     getMockTwitterArticles(),   // Twitter/Apify (production: fetchTwitterNews())
-     getMockTelegramArticles(),  // Telegram Bot API (production: fetchTelegramNews())
-   ]);
-   ```
-
-2. **Deduplication**:
-   ```typescript
-   // Exact match (SHA-256 hash)
-   const contentHash = await computeContentHash(article.content);
-
-   // Fuzzy match (MinHash with 80% threshold)
-   const minHash = generateMinHashSignature(article.content);
-   const similarity = jaccardSimilarity(existing.minHash, newArticle.minHash);
-   if (similarity >= 0.8) {
-     // Skip duplicate
-   }
-   ```
-
-3. **Caching**:
-   - Server-side: 10-minute cache
-   - Client-side: SWR with 10-minute refresh interval
-   - Offline: IndexedDB stores last 50 articles
-
-### Offline Support
-
-**Article Caching**:
-- Articles automatically cached to IndexedDB when fetched online
-- Offline mode loads from cache if network unavailable
-- Yellow banner indicates offline status
-
-**Report Queueing**:
-- Offline reports saved to IndexedDB
-- Automatically synced when connection restored
-- Success message indicates "Queued" vs "Submitted" status
-
-**Online/Offline Detection**:
-```typescript
-useEffect(() => {
-  const handleOnlineStatus = () => {
-    setIsOffline(!navigator.onLine);
-    if (navigator.onLine && isOffline) {
-      mutate(); // Refresh data when back online
-    }
-  };
-  window.addEventListener('online', handleOnlineStatus);
-  window.addEventListener('offline', handleOnlineStatus);
-}, []);
-```
-
-### Push Notifications
-
-**Setup**:
-1. Generate VAPID keys: `npm run generate-vapid-keys`
-2. Store in `.env`:
-   ```
-   VAPID_PUBLIC_KEY=<public-key>
-   VAPID_PRIVATE_KEY=<private-key>
-   NEXT_PUBLIC_VAPID_PUBLIC_KEY=<public-key>
-   ```
-
-**Subscription Flow**:
-1. User clicks "🔔 Notify Me" button
-2. Request notification permission
-3. Subscribe via Push Manager
-4. Send subscription to `/api/subscribe`
-5. Server stores subscription (in-memory dev, DynamoDB prod)
-
-**Notification Sending**:
-- Automatic: Triggered when new articles arrive
-- Manual: POST to `/api/push` with title/message/url
-
-### Map Visualization
-
-**Tile Layers**:
-- Modern (CartoDB Voyager) - Default, English labels
-- Topographic (OpenTopoMap)
-- Satellite (Esri World Imagery)
-- Dark Mode (CartoDB Dark Matter)
-
-**Marker Clustering**:
-- Uses `react-leaflet-cluster` for performance
-- Color-coded by incident type:
-  - Protest: Red (📢)
-  - Arrest: Amber (🚨)
-  - Injury: Orange (🩹)
-  - Casualty: Dark Red (💔)
-  - Other: Indigo (📝)
-
-**Verification Badges**:
-- ✅ Verified (manual moderation)
-- ⏳ Pending verification
-
-### Cost Optimization
-
-**Current Budget**: $10.60/month (47% under $20 target)
-
-**Optimization Strategies**:
-1. **Batching**: 6 Perplexity queries → 1 API call (83% savings)
-2. **Caching**: 10-minute server cache + SWR client cache (70% fewer API calls)
-3. **Adaptive Polling**: Off-peak 30min intervals vs peak 5min (37% savings)
-4. **Deduplication**: MinHash prevents duplicate API calls (40-60% savings)
-5. **Combined Effect**: 87% total API cost reduction
-
-**Breakdown**:
-- Perplexity API: $3.60/month (720 calls with optimizations)
-- Twitter/Apify: $7.00/month (web scraping, official API is $100+/month)
-- Telegram: $0.00/month (free Bot API)
-- Google Translation API: $0.00/month (free tier: 500k chars, ~75k expected usage)
-- Vercel: $0.00/month (free tier)
-- AWS: $0.00/month (free tier)
+## Cost: $10.60/month
+- Perplexity API: $3.60 (batching + caching = 87% reduction)
+- Twitter/Apify: $7.00 (web scraping vs $100+ official API)
+- Translation/Vercel/AWS: Free tiers
 
 ## Environment Variables
 
-Create a `.env` file with the following:
-
+**Required:**
 ```bash
-# Perplexity API
-PERPLEXITY_API_KEY=your_key_here
-
-# Twitter/Apify (optional, using mock data in dev)
-APIFY_API_TOKEN=your_token_here
-
-# Telegram Bot (optional, using mock data in dev)
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-
-# VAPID Keys for Push Notifications
-VAPID_PUBLIC_KEY=your_public_key_here
-VAPID_PRIVATE_KEY=your_private_key_here
-VAPID_SUBJECT=mailto:your-email@example.com
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key_here
-
-# Cloudflare Images (optional, for production image uploads)
-CLOUDFLARE_API_TOKEN=your_token_here
-CLOUDFLARE_ACCOUNT_ID=your_account_id_here
-
-# Google Cloud Translation API
-GOOGLE_CLOUD_PROJECT=coiled-cloud
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
-
-# Base URL (for production)
-NEXT_PUBLIC_BASE_URL=https://your-domain.com
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}  # Firestore
+PERPLEXITY_API_KEY=pplx-xxx                              # News aggregation
 ```
 
-## Development
-
+**Optional (Production):**
 ```bash
-# Install dependencies
-npm install
+# Push Notifications (run: npm run generate-vapid-keys)
+VAPID_PUBLIC_KEY=xxx
+VAPID_PRIVATE_KEY=xxx
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=xxx
 
-# Run development server
-npm run dev
+# Rate Limiting (Upstash Redis)
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxx
 
-# Open http://localhost:3000
+# Translation (Google Cloud)
+GOOGLE_CLOUD_PROJECT=xxx
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+
+# Additional Sources
+TELEGRAM_BOT_TOKEN=xxx      # @BotFather
+APIFY_API_TOKEN=xxx         # Twitter scraping
 ```
 
-## Testing
-
-### Test Push Notifications
-
-1. Subscribe to notifications in the browser
-2. Send a test notification:
-   ```bash
-   curl -X POST http://localhost:3000/api/push \
-     -H "Content-Type: application/json" \
-     -d '{
-       "title": "Test Notification",
-       "message": "This is a test",
-       "url": "/"
-     }'
-   ```
-
-### Test Offline Mode
-
-1. Open DevTools → Network tab
-2. Set throttling to "Offline"
-3. Verify cached articles load
-4. Submit a report → verify it's queued
-5. Go back online → verify report syncs
-
-### Test Map
-
-1. Navigate to `/map`
-2. Verify 8 pre-loaded incidents display
-3. Click markers to view popups
-4. Use layer control to switch tile layers
-5. Test incident type filters
-
-## Production Deployment (Planned)
-
-### 1. Deploy Frontend (Vercel)
+## Development Workflow
 
 ```bash
+# Run tests in watch mode
+npm test -- --watch
+
+# Test specific feature
+npm test -- minhash
+
+# Build and validate
 npm run build
-vercel --prod
+npm run test:ci
+
+# Generate VAPID keys for push
+npm run generate-vapid-keys
 ```
 
-Set environment variables in Vercel dashboard.
+## Documentation
 
-### 2. Deploy Backend (AWS SAM)
-
-```bash
-sam build
-sam deploy --guided
-```
-
-Provisions:
-- 3 DynamoDB tables (Articles, Incidents, Subscriptions)
-- 5 Lambda functions (Perplexity, Twitter, Telegram, Deduplicator, Push Sender)
-- CloudWatch Event triggers (every 10 minutes)
-
-### 3. Configure Telegram Bot
-
-```bash
-# Get bot token from @BotFather
-curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
-  -d "url=https://<LAMBDA_URL>/telegram-webhook"
-```
-
-## Maintenance
-
-- **Daily**: Check CloudWatch for errors, review moderation queue
-- **Weekly**: Monitor API costs, update channel list, check metrics
-- **Monthly**: Review cost breakdown, archive old articles, update dependencies
+- **Architecture**: `ARCHITECTURE.md` - System design & data flow
+- **Performance**: `PERFORMANCE_SUMMARY.md` - Optimization details
+- **Testing**: `TESTING_QUICKSTART.md` - TDD workflow
+- **Deployment**: `DEPLOYMENT.md` - Production checklist
+- **Refactoring**: `REFACTORING_COMPLETE.md` - Recent improvements
 
 ## Known Issues
 
-- PWA service worker regenerates on build (push handlers need to be re-added)
 - React Strict Mode disabled for Leaflet compatibility
-- Perplexity API occasionally refuses JSON format (fallback parsing implemented)
-- iOS push notifications only work after "Add to Home Screen"
-
-## Future Enhancements
-
-- [x] Translation support (Farsi ↔ English with Google Cloud Translation API)
-- [ ] Auto-translate preference setting
-- [ ] Multi-language support (add Arabic, Turkish)
-- [ ] Search functionality (Algolia free tier)
-- [ ] User accounts for favorites
-- [ ] Analytics dashboard
-- [ ] CSV export for researchers
-- [ ] Browser extension for quick reporting
-- [ ] RSS feed
-- [ ] Dark mode toggle (currently auto via system preference)
-- [ ] Google Gemini Pro integration for cheaper translations
+- iOS push notifications require "Add to Home Screen" first
+- Service worker regenerates on build (affects custom push handlers)
 
 ## Contributing
 
-This project is built with Claude Code (Anthropic's CLI). For contributions:
-
-1. Maintain clean code with minimal comments (explanations in commit messages)
-2. Use TypeScript for all new code
-3. Follow existing patterns for component structure
-4. Test offline support and push notifications thoroughly
-5. Keep bundle size minimal (avoid unnecessary dependencies)
-
-## License
-
-[Specify license here]
-
-## Contact
-
-[Your contact information]
+Built with Claude Code. Follow existing patterns:
+1. TypeScript for all code
+2. SOLID principles in services
+3. Test critical paths (run `npm test`)
+4. Minimal inline comments (explain in commits)
 
 ---
 
-**Note**: This project is a humanitarian effort to provide real-time information during the Persian uprising. All data sources are public and no personal information is collected without explicit consent.
+**Humanitarian Note**: Public data sources only. No PII collected. GDPR compliant.

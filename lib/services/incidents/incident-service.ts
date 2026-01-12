@@ -5,8 +5,10 @@ import {
   isFirestoreAvailable,
   Incident,
 } from '@/lib/firestore';
+import { IncidentDeduplicator } from './incident-deduplicator';
 
 export class IncidentService {
+  private deduplicator = new IncidentDeduplicator();
   async getAll(filters?: {
     type?: string;
     bounds?: { north: number; south: number; east: number; west: number };
@@ -18,6 +20,9 @@ export class IncidentService {
 
     try {
       let incidents = await getIncidents();
+
+      // Remove exact duplicates (same ID appearing multiple times)
+      incidents = this.deduplicator.removeExactDuplicates(incidents);
 
       if (filters?.bounds) {
         const { north, south, east, west } = filters.bounds;
@@ -33,6 +38,10 @@ export class IncidentService {
         incidents = incidents.filter(incident => incident.type === filters.type);
       }
 
+      // Group similar incidents (optional - returns with duplicateCount)
+      // Uncomment if you want to show duplicate counts in UI
+      // incidents = this.deduplicator.groupSimilarIncidents(incidents);
+
       return incidents;
     } catch (error) {
       console.error('Error fetching incidents:', error);
@@ -46,6 +55,20 @@ export class IncidentService {
     }
 
     this.validateIncident(data);
+
+    // Check for duplicates before saving
+    const existingIncidents = await getIncidents();
+    const deduplicationResult = this.deduplicator.checkDuplicate(data, existingIncidents);
+
+    if (deduplicationResult.isDuplicate) {
+      console.log(
+        `⚠️ Duplicate incident detected: ${deduplicationResult.reason} (similarity: ${(deduplicationResult.similarity! * 100).toFixed(1)}%)`
+      );
+      throw new Error(
+        `This incident may already be reported. ${deduplicationResult.reason}. ` +
+        `Please check existing reports or provide more specific details.`
+      );
+    }
 
     const incidentId = await saveIncident(data);
     console.log(`📍 New incident reported: ${data.type} - ${data.title} (ID: ${incidentId})`);
