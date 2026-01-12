@@ -248,7 +248,7 @@ export interface Incident {
 /**
  * Save an incident to Firestore
  */
-export async function saveIncident(incident: Omit<Incident, 'id'>): Promise<string> {
+export async function saveIncident(incident: Omit<Incident, 'id' | 'createdAt'>): Promise<string> {
   if (!db) throw new Error('Firestore not initialized');
 
   const docRef = await db.collection('incidents').add({
