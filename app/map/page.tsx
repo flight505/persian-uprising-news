@@ -204,20 +204,6 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Timeline Slider */}
-      {incidents.length > 0 && (
-        <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <TimelineSlider
-              minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
-              maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
-              onDateRangeChange={(start, end) => setDateRange({ start, end })}
-              incidentCountByDay={incidentCountByDay}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Map Container */}
       <div className="flex-1 relative">
         {isLoading ? (
@@ -228,13 +214,27 @@ export default function MapPage() {
             </div>
           </div>
         ) : (
-          <IncidentMap
-            incidents={incidents}
-            selectedType={selectedType}
-            dateRange={dateRange}
-            showHeatmap={showHeatmap}
-            onIncidentClick={(incident) => setSelectedIncident(incident)}
-          />
+          <>
+            <IncidentMap
+              incidents={incidents}
+              selectedType={selectedType}
+              dateRange={dateRange}
+              showHeatmap={showHeatmap}
+              onIncidentClick={(incident) => setSelectedIncident(incident)}
+            />
+
+            {/* Floating Timeline Slider */}
+            {incidents.length > 0 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-[1000]">
+                <TimelineSlider
+                  minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
+                  maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
+                  onDateRangeChange={(start, end) => setDateRange({ start, end })}
+                  incidentCountByDay={incidentCountByDay}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 
