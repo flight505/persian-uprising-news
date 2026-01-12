@@ -225,7 +225,7 @@ export default function MapPage() {
 
             {/* Floating Timeline Slider */}
             {incidents.length > 0 && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-[1000]">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-[1000] pointer-events-none">
                 <TimelineSlider
                   minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
                   maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
