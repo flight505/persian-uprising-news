@@ -99,13 +99,18 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Update incident with Twitter data
-        await updateIncident(incident.id, {
+        // Update incident with Twitter data (filter out undefined values)
+        const updateData: any = {
           twitterUrl: update.twitterUrl,
-          alternateUrl: update.alternateUrl,
           embedType: update.embedType,
           tags: update.tags,
-        } as any);
+        };
+
+        if (update.alternateUrl) {
+          updateData.alternateUrl = update.alternateUrl;
+        }
+
+        await updateIncident(incident.id, updateData);
 
         results.updated.push(`${incident.title} (ID: ${incident.id})`);
         console.log(`✅ Updated incident: ${incident.title}`);
