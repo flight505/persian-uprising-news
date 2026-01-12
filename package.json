@@ -27,6 +27,7 @@
     "react-leaflet-cluster": "^2.1.0",
     "sharp": "^0.33.5",
     "swr": "^2.2.5",
+    "telegram": "^2.25.15",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
