@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Cron: Completed in ${duration}ms`);
     console.log(`📊 Results:`, {
-      saved: result.saved,
-      duplicates: result.duplicates,
-      errors: result.errors.length,
+      articlesAdded: result.articlesAdded,
+      articlesTotal: result.articlesTotal,
+      incidentsExtracted: result.incidentsExtracted,
     });
 
     return NextResponse.json({
@@ -46,10 +46,9 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       duration,
       results: {
-        saved: result.saved,
-        duplicates: result.duplicates,
-        errors: result.errors.length,
-        sources: result.sources,
+        articlesAdded: result.articlesAdded,
+        articlesTotal: result.articlesTotal,
+        incidentsExtracted: result.incidentsExtracted,
       },
     });
 
