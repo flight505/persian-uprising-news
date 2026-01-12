@@ -210,3 +210,230 @@ My role is to synthesize and analyze the search results that have been provided 
  ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
  ✓ Ready in 2.1s
    Reload env: .env
+ ○ Compiling /api/news ...
+ ✓ Compiled /api/news in 1500ms (624 modules)
+🔄 Fetching fresh news from Perplexity...
+🔄 Fetching from Perplexity, Twitter, and Telegram...
+ ✓ Compiled in 543ms (610 modules)
+ GET /apple-touch-icon.png 404 in 2190ms
+ GET /apple-touch-icon-precomposed.png 404 in 2188ms
+📰 Received 9 articles from Perplexity
+🐦 Received 3 articles from Twitter
+📱 Received 4 articles from Telegram
+✅ Added 16 new articles (0 duplicates removed)
+📊 Total articles in cache: 16
+ GET /api/news 200 in 20752ms
+ ✓ Compiled in 551ms (215 modules)
+ ✓ Compiled in 304ms (229 modules)
+ ✓ Compiled in 265ms (229 modules)
+ ✓ Compiled in 264ms (229 modules)
+ ✓ Compiled in 301ms (229 modules)
+ ✓ Compiled in 273ms (229 modules)
+ ✓ Compiled in 301ms (229 modules)
+ ✓ Compiled in 328ms (229 modules)
+ ✓ Compiled in 269ms (229 modules)
+   Reload env: .env
+ ✓ Compiled in 276ms (215 modules)
+ ✓ Compiled in 551ms (215 modules)
+ ✓ Compiled /api/scrape/twitter in 403ms (318 modules)
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=24&dryRun=true 200 in 446ms
+🐦 Starting Twitter scrape: maxTweets=50, hoursBack=24
+💰 Estimated cost: $0.0200
+🐦 Starting Twitter scrape for: #MahsaAmini OR #IranProtests OR #OpIran OR #IranRevolution OR #WomanLifeFreedom OR #مهسا_امینی
+📅 Date range: since:2026-01-10
+❌ Failed to start Apify run: {
+  "error": {
+    "type": "page-not-found",
+    "message": "We have bad news: there is no API endpoint at this URL. Did you specify it correctly?"
+  }
+}
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=24 200 in 470ms
+ ✓ Compiled in 33ms (103 modules)
+🐦 Starting Twitter scrape: maxTweets=50, hoursBack=24
+💰 Estimated cost: $0.0200
+🐦 Starting Twitter scrape for: #MahsaAmini OR #IranProtests OR #OpIran OR #IranRevolution OR #WomanLifeFreedom OR #مهسا_امینی
+📅 Date range: since:2026-01-10
+❌ Failed to start Apify run: {
+  "error": {
+    "type": "invalid-input",
+    "message": "Input is not valid: Field input.tweetLanguage must be equal to one of the allowed values: \"ab\", \"aa\", \"af\", \"ak\", \"sq\", \"am\", \"ar\", \"an\", \"hy\", \"as\", \"av\", \"ae\", \"ay\", \"az\", \"bm\", \"ba\", \"eu\", \"be\", \"bn\", \"bi\", \"bs\", \"br\", \"bg\", \"my\", \"ca\", \"ch\", \"ce\", \"ny\", \"zh\", \"cu\", \"cv\", \"kw\", \"co\", \"cr\", \"hr\", \"cs\", \"da\", \"dv\", \"nl\", \"dz\", \"en\", \"eo\", \"et\", \"ee\", \"fo\", \"fj\", \"fi\", \"fr\", \"fy\", \"ff\", \"gd\", \"gl\", \"lg\", \"ka\", \"de\", \"el\", \"kl\", \"gn\", \"gu\", \"ht\", \"ha\", \"he\", \"hz\", \"hi\", \"ho\", \"hu\", \"is\", \"io\", \"ig\", \"id\", \"ia\", \"ie\", \"iu\", \"ik\", \"ga\", \"it\", \"ja\", \"jv\", \"kn\", \"kr\", \"ks\", \"kk\", \"km\", \"ki\", \"rw\", \"ky\", \"kv\", \"kg\", \"ko\", \"kj\", \"ku\", \"lo\", \"la\", \"lv\", \"li\", \"ln\", \"lt\", \"lu\", \"lb\", \"mk\", \"mg\", \"ms\", \"ml\", \"mt\", \"gv\", \"mi\", \"mr\", \"mh\", \"mn\", \"na\", \"nv\", \"nd\", \"nr\", \"ng\", \"ne\", \"no\", \"nb\", \"nn\", \"ii\", \"oc\", \"oj\", \"or\", \"om\", \"os\", \"pi\", \"ps\", \"fa\", \"pl\", \"pt\", \"pa\", \"qu\", \"ro\", \"rm\", \"rn\", \"ru\", \"se\", \"sm\", \"sg\", \"sa\", \"sc\", \"sr\", \"sn\", \"sd\", \"si\", \"sk\", \"sl\", \"so\", \"st\", \"es\", \"su\", \"sw\", \"ss\", \"sv\", \"tl\", \"ty\", \"tg\", \"ta\", \"tt\", \"te\", \"th\", \"bo\", \"ti\", \"to\", \"ts\", \"tn\", \"tr\", \"tk\", \"tw\", \"ug\", \"uk\", \"ur\", \"uz\", \"ve\", \"vi\", \"vo\", \"wa\", \"cy\", \"wo\", \"xh\", \"yi\", \"yo\", \"za\", \"zu\""
+  }
+}
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=24 200 in 485ms
+ ✓ Compiled in 24ms (103 modules)
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=168 400 in 18ms
+🐦 Starting Twitter scrape: maxTweets=50, hoursBack=72
+💰 Estimated cost: $0.0200
+🐦 Starting Twitter scrape for: #MahsaAmini OR #IranProtests OR #OpIran OR #IranRevolution OR #WomanLifeFreedom OR #مهسا_امینی
+📅 Date range: since:2026-01-08
+⏳ Apify run started: rpAS4qI2nmQfPsU2W, waiting for completion...
+⏳ Apify run status: SUCCEEDED (attempt 1/60)
+❌ Error scraping Twitter: TypeError: Cannot read properties of undefined (reading 'match')
+    at transformTweetToArticle (lib/twitter-scraper.ts:184:31)
+    at Array.map (<anonymous>)
+    at scrapeTwitter (lib/twitter-scraper.ts:125:29)
+    at async GET (app/api/scrape/twitter/route.ts:55:22)
+  182 |
+  183 |   // Extract hashtags from text
+> 184 |   const hashtags = tweet.text.match(/#\w+/g) || [];
+      |                               ^
+  185 |
+  186 |   // Create title from first 100 chars of tweet
+  187 |   const title = tweet.text.length > 100
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=72 200 in 6298ms
+ ✓ Compiled in 29ms (103 modules)
+ ✓ Compiled in 25ms (103 modules)
+ ✓ Compiled in 23ms (103 modules)
+🐦 Starting Twitter scrape: maxTweets=50, hoursBack=72
+💰 Estimated cost: $0.0200
+🐦 Starting Twitter scrape for: #MahsaAmini OR #IranProtests OR #OpIran OR #IranRevolution OR #WomanLifeFreedom OR #مهسا_امینی
+📅 Date range: since:2026-01-08
+⏳ Apify run started: EntuacaeVfx55AhSq, waiting for completion...
+⏳ Apify run status: SUCCEEDED (attempt 1/60)
+📦 Received 10 raw tweets from Apify
+🔍 Sample tweet structure: {
+  "noResults": true
+}
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+✅ Scraped 0 tweets from Twitter (10 failed transformation)
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=72 200 in 6216ms
+ ✓ Compiled in 25ms (103 modules)
+🐦 Starting Twitter scrape: maxTweets=50, hoursBack=24
+💰 Estimated cost: $0.0200
+🐦 Starting Twitter scrape for hashtags: #MahsaAmini, #IranProtests, #OpIran
+📊 Will scrape up to 50 tweets per hashtag
+⏳ Apify run started: HtAG6EGd2WSFcisYf, waiting for completion...
+⏳ Apify run status: SUCCEEDED (attempt 1/60)
+📦 Received 10 raw tweets from Apify
+🔍 Sample tweet structure: {
+  "noResults": true
+}
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+✅ Scraped 0 tweets from Twitter (10 failed transformation)
+ GET /api/scrape/twitter?maxTweets=50&hoursBack=24 200 in 6199ms
+ ✓ Compiled in 583ms (229 modules)
+ ✓ Compiled in 306ms (229 modules)
+ ✓ Compiled in 308ms (229 modules)
+ ✓ Compiled in 320ms (229 modules)
+   Reload env: .env
+ ✓ Compiled in 283ms (215 modules)
+ ✓ Compiled /api/cron/scrape in 294ms (317 modules)
+⏰ Cron job triggered: Starting automated news scraping
+ ✓ Compiled /api/news in 119ms (172 modules)
+🔄 Manual refresh triggered
+🔄 Fetching from Perplexity, Twitter (Apify), and Telegram...
+🐦 Starting Twitter scrape for hashtags: #MahsaAmini, #IranProtests, #OpIran
+📊 Will scrape up to 50 tweets per hashtag
+⏳ Apify run started: ahbacKN4agcMO5BBK, waiting for completion...
+⏳ Apify run status: SUCCEEDED (attempt 1/60)
+📦 Received 10 raw tweets from Apify
+🔍 Sample tweet structure: {
+  "noResults": true
+}
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+✅ Scraped 0 tweets from Twitter (10 failed transformation)
+📰 Received 10 articles from Perplexity
+🐦 Received 0 articles from Twitter (Apify)
+📱 Received 4 articles from Telegram
+✅ Added 14 new articles (0 duplicates removed)
+📊 Total articles in cache: 14
+ POST /api/news 200 in 14499ms
+✅ Cron job completed in 14503ms
+📊 Articles in cache: 14
+ GET /api/cron/scrape 200 in 14830ms
+❌ Unauthorized cron request
+ GET /api/cron/scrape 401 in 6ms
+ ✓ Compiled in 321ms (229 modules)
+ ✓ Compiled in 274ms (229 modules)
+ ✓ Compiled in 268ms (229 modules)
+ ✓ Compiled in 313ms (229 modules)
+   Reload env: .env
+ ✓ Compiled in 278ms (215 modules)
+ ✓ Compiled in 267ms (229 modules)
+ ✓ Compiled in 250ms (229 modules)
+ ✓ Compiled in 305ms (229 modules)
+ ✓ Compiled in 266ms (229 modules)
+ ✓ Compiled in 273ms (229 modules)
+ ✓ Compiled in 549ms (229 modules)
+ ✓ Compiled /api/telegram/test in 335ms (318 modules)
+📱 Starting Telegram scrape...
+📱 No new Telegram updates
+ GET /api/telegram/test 200 in 33487ms
+ ✓ Compiled in 284ms (215 modules)
+ ✓ Compiled in 300ms (229 modules)
+ ✓ Compiled in 258ms (229 modules)
+ ✓ Compiled in 241ms (229 modules)
+ ✓ Compiled in 306ms (229 modules)
+ ✓ Compiled in 271ms (229 modules)
+ ✓ Compiled in 285ms (229 modules)
+ ✓ Compiled in 318ms (229 modules)
+ ✓ Compiled in 279ms (229 modules)
+ ✓ Compiled in 288ms (229 modules)
+ ✓ Compiled in 270ms (229 modules)
+ ✓ Compiled in 250ms (229 modules)
+ ✓ Compiled /api/news in 496ms (174 modules)
+🔄 Fetching fresh news from sources...
+🔄 Fetching from Perplexity, Twitter (Apify), and Telegram (Bot API)...
+🐦 Starting Twitter scrape for hashtags: #MahsaAmini, #IranProtests, #OpIran
+📊 Will scrape up to 50 tweets per hashtag
+📱 Starting Telegram scrape...
+⏳ Apify run started: T22CkNJwcsCtMX8mT, waiting for completion...
+⏳ Apify run status: SUCCEEDED (attempt 1/60)
+📦 Received 10 raw tweets from Apify
+🔍 Sample tweet structure: {
+  "noResults": true
+}
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+⚠️ Skipping tweet with missing required fields: undefined
+✅ Scraped 0 tweets from Twitter (10 failed transformation)
+📱 No new Telegram updates
+📰 Received 9 articles from Perplexity
+🐦 Received 0 articles from Twitter (Apify)
+📱 Received 0 articles from Telegram (Bot API)
+✅ Found 9 new articles (0 duplicates removed)
+💾 Saved 9 articles to Firestore
+ GET /api/news 200 in 33580ms
+ ✓ Compiled /api/incidents in 313ms (391 modules)
+ GET /api/incidents 200 in 491ms
+ ✓ Compiled in 30ms
+ ✓ Compiled in 392ms (229 modules)
+ ✓ Compiled in 309ms (229 modules)
+ ✓ Compiled in 329ms (229 modules)
+ ✓ Compiled in 281ms (229 modules)
+ ✓ Compiled in 271ms (229 modules)
+ ✓ Compiled in 309ms (229 modules)

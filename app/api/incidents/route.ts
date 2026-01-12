@@ -23,6 +23,11 @@ export interface Incident {
   timestamp: number;
   upvotes: number;
   createdAt: number;
+  relatedArticles?: Array<{
+    title: string;
+    url: string;
+    source: string;
+  }>;
 }
 
 // Mock data for seeding Firestore on first load
@@ -37,6 +42,18 @@ const mockIncidents: Omit<Incident, 'id' | 'createdAt'>[] = [
     reportedBy: 'official',
     timestamp: Date.now() - 3600000,
     upvotes: 47,
+    relatedArticles: [
+      {
+        title: 'Thousands protest in Tehran demanding reforms',
+        url: 'https://www.bbc.com/persian/iran',
+        source: 'BBC Persian'
+      },
+      {
+        title: 'Heavy police presence at Azadi Square demonstration',
+        url: 'https://www.iranintl.com',
+        source: 'Iran International'
+      }
+    ],
   },
   {
     type: 'arrest',
@@ -48,6 +65,13 @@ const mockIncidents: Omit<Incident, 'id' | 'createdAt'>[] = [
     reportedBy: 'official',
     timestamp: Date.now() - 7200000,
     upvotes: 23,
+    relatedArticles: [
+      {
+        title: '15 students detained at Tehran University',
+        url: 'https://www.radiofarda.com',
+        source: 'Radio Farda'
+      }
+    ],
   },
   {
     type: 'protest',
@@ -81,6 +105,18 @@ const mockIncidents: Omit<Incident, 'id' | 'createdAt'>[] = [
     reportedBy: 'official',
     timestamp: Date.now() - 14400000,
     upvotes: 56,
+    relatedArticles: [
+      {
+        title: 'Sharif University students walk out in solidarity',
+        url: 'https://www.bbc.com/persian/iran',
+        source: 'BBC Persian'
+      },
+      {
+        title: 'Security forces surround engineering campus',
+        url: 'https://www.voanews.com/persian',
+        source: 'VOA Persian'
+      }
+    ],
   },
   {
     type: 'other',

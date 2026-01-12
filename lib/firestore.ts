@@ -243,6 +243,11 @@ export interface Incident {
   timestamp: number;
   upvotes: number;
   createdAt: number;
+  relatedArticles?: Array<{
+    title: string;
+    url: string;
+    source: string;
+  }>;
 }
 
 /**

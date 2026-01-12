@@ -37,6 +37,11 @@ interface Incident {
   timestamp: number;
   upvotes: number;
   createdAt: number;
+  relatedArticles?: Array<{
+    title: string;
+    url: string;
+    source: string;
+  }>;
 }
 
 interface IncidentMapProps {
@@ -274,6 +279,26 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick }
                     {incident.reportedBy === 'official' ? '🔵 Official' : '👤 Crowdsourced'}
                   </span>
                 </div>
+
+                {/* Related Articles */}
+                {incident.relatedArticles && incident.relatedArticles.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">📰 Sources:</p>
+                    <div className="space-y-1">
+                      {incident.relatedArticles.map((article, idx) => (
+                        <a
+                          key={idx}
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <span className="text-gray-500">[{article.source}]</span> {article.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </Popup>
           </Marker>
