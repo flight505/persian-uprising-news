@@ -60,13 +60,15 @@ const INCIDENT_UPDATES = [
 ];
 
 export async function POST(request: NextRequest) {
-  // Simple admin authentication (you should add proper auth in production)
-  const adminSecret = request.headers.get('x-admin-secret');
-  if (adminSecret !== process.env.ADMIN_SECRET && process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+  // Simple admin authentication (allow if ADMIN_SECRET not set for initial testing)
+  if (process.env.ADMIN_SECRET) {
+    const adminSecret = request.headers.get('x-admin-secret');
+    if (adminSecret !== process.env.ADMIN_SECRET) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
   }
 
   if (!isFirestoreAvailable()) {
