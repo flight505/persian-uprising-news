@@ -36,34 +36,50 @@ export default function TweetEmbed({ url, isDarkMode = false }: TweetEmbedProps)
   useEffect(() => {
     if (!url || !containerRef.current) return;
 
+    setIsLoading(true);
+    setError(null);
+
+    // CRITICAL: Handle comma-separated URLs (for alternate angles)
+    // Iran-main uses this pattern: "url1, url2" for multiple angles
+    const cleanUrl = url.split(',')[0].trim();
+
     // Extract tweet ID from URL
-    const tweetId = url.split('/').pop()?.split('?')[0];
+    const tweetId = cleanUrl.split('/').pop()?.split('?')[0];
     if (!tweetId) {
       setError('Invalid Twitter URL');
       setIsLoading(false);
       return;
     }
 
-    // Clear previous content
+    // Always clear container (matching Iran-main pattern)
     if (containerRef.current) {
       containerRef.current.innerHTML = '';
     }
 
-    // Load Twitter widgets script if not already loaded
-    if (!window.twttr) {
-      const script = document.createElement('script');
-      script.src = 'https://platform.twitter.com/widgets.js';
-      script.async = true;
-      script.onload = () => {
+    // Function to render tweet
+    const renderTweet = () => {
+      if (window.twttr && window.twttr.widgets) {
         embedTweet(tweetId);
-      };
-      script.onerror = () => {
-        setError('Failed to load Twitter widgets');
-        setIsLoading(false);
-      };
-      document.body.appendChild(script);
+      }
+    };
+
+    // Load Twitter widgets script if not already loaded
+    if (window.twttr && window.twttr.widgets) {
+      renderTweet();
     } else {
-      embedTweet(tweetId);
+      // Check if script already exists
+      if (!document.getElementById('twitter-wjs')) {
+        const script = document.createElement('script');
+        script.id = 'twitter-wjs';
+        script.src = 'https://platform.twitter.com/widgets.js';
+        script.async = true;
+        script.onload = renderTweet;
+        script.onerror = () => {
+          setError('Failed to load Twitter widgets');
+          setIsLoading(false);
+        };
+        document.body.appendChild(script);
+      }
     }
   }, [url, isDarkMode]);
 
@@ -76,10 +92,8 @@ export default function TweetEmbed({ url, isDarkMode = false }: TweetEmbedProps)
     window.twttr.widgets
       .createTweet(tweetId, containerRef.current, {
         theme: isDarkMode ? 'dark' : 'light',
-        cards: 'visible',
         conversation: 'none',
         align: 'center',
-        width: '100%',
       })
       .then((element) => {
         if (!element) {
