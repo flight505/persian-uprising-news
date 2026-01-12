@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       .substring(0, 16);
 
     // Check if already subscribed
-    const existing = findSubscription(endpointHash);
+    const existing = await findSubscription(endpointHash);
     if (existing) {
       console.log(`✅ Subscription already exists: ${endpointHash}`);
       return NextResponse.json({
@@ -61,10 +61,11 @@ export async function POST(request: NextRequest) {
       subscribedAt: Date.now(),
     };
 
-    addSubscription(newSubscription);
+    await addSubscription(newSubscription);
 
+    const totalSubs = (await getActiveSubscriptions()).length;
     console.log(`📬 New push subscription: ${endpointHash}`);
-    console.log(`📊 Total subscriptions: ${getActiveSubscriptions().length}`);
+    console.log(`📊 Total subscriptions: ${totalSubs}`);
 
     return NextResponse.json({
       success: true,
@@ -105,12 +106,13 @@ export async function DELETE(request: NextRequest) {
       .substring(0, 16);
 
     // Remove subscription
-    const existing = findSubscription(endpointHash);
-    removeSubscription(endpointHash);
+    const existing = await findSubscription(endpointHash);
+    await removeSubscription(endpointHash);
 
     if (existing) {
+      const totalSubs = (await getActiveSubscriptions()).length;
       console.log(`🗑️ Removed subscription: ${endpointHash}`);
-      console.log(`📊 Total subscriptions: ${getActiveSubscriptions().length}`);
+      console.log(`📊 Total subscriptions: ${totalSubs}`);
 
       return NextResponse.json({
         success: true,
@@ -137,7 +139,7 @@ export async function DELETE(request: NextRequest) {
  * Get subscription statistics (admin/debug)
  */
 export async function GET(request: NextRequest) {
-  const subscriptions = getActiveSubscriptions();
+  const subscriptions = await getActiveSubscriptions();
 
   return NextResponse.json({
     totalSubscriptions: subscriptions.length,

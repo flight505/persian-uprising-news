@@ -6,6 +6,14 @@ import { getMockTelegramArticles, TelegramArticle } from '@/lib/telegram';
 import { scrapeTelegram, ScrapedTelegramArticle } from '@/lib/telegram-scraper';
 import { minHashDeduplicator, computeContentHash, generateMinHashSignature } from '@/lib/minhash';
 import { sendPushNotification } from '@/lib/push-notifications';
+import {
+  saveArticles,
+  getArticles as getFirestoreArticles,
+  getArticleByContentHash,
+  getRecentArticles,
+  isFirestoreAvailable,
+  Article as FirestoreArticle,
+} from '@/lib/firestore';
 
 type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | TelegramArticle | ScrapedTelegramArticle) & {
   id: string;
@@ -15,10 +23,8 @@ type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | Tel
   topics?: string[]; // Optional field for filtering (normalized from tags for Twitter)
 };
 
-// In-memory cache for development (will be replaced with DynamoDB in production)
-let articlesCache: Article[] = [];
 let lastFetch = 0;
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes (increased for development to reduce API calls)
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 /**
  * GET /api/news
@@ -37,26 +43,34 @@ export async function GET(request: NextRequest) {
 
     // Check if we need to refresh the cache
     const now = Date.now();
-    if (now - lastFetch > CACHE_DURATION || articlesCache.length === 0) {
-      console.log('🔄 Fetching fresh news from Perplexity...');
+    if (now - lastFetch > CACHE_DURATION) {
+      console.log('🔄 Fetching fresh news from sources...');
       await refreshNewsCache();
       lastFetch = now;
     }
 
-    // Filter by topic if requested
-    let articles = articlesCache;
-    if (topicFilter) {
-      articles = articles.filter(article =>
-        article.topics?.includes(topicFilter) || false
-      );
+    // Get articles from Firestore
+    let articles: FirestoreArticle[];
+
+    if (isFirestoreAvailable()) {
+      if (topicFilter) {
+        // Note: Topic filtering not yet implemented in Firestore queries
+        // For now, fetch all and filter in memory
+        const allArticles = await getFirestoreArticles(200);
+        articles = allArticles.filter(article =>
+          article.topics?.includes(topicFilter) || false
+        );
+      } else {
+        articles = await getFirestoreArticles(limit * (page + 1));
+      }
+    } else {
+      console.warn('⚠️ Firestore not available, returning empty array');
+      articles = [];
     }
 
-    // Sort by createdAt (newest first)
-    articles.sort((a, b) => b.createdAt - a.createdAt);
-
-    // Paginate
-    const start = page * limit;
-    const end = start + limit;
+    // Paginate if needed (when topic filtering was applied)
+    const start = topicFilter ? page * limit : 0;
+    const end = topicFilter ? start + limit : articles.length;
     const paginatedArticles = articles.slice(start, end);
 
     return NextResponse.json({
@@ -85,12 +99,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Manual refresh triggered');
-    await refreshNewsCache();
+    const newArticlesCount = await refreshNewsCache();
     lastFetch = Date.now();
 
     return NextResponse.json({
       success: true,
-      articlesCount: articlesCache.length,
+      articlesCount: newArticlesCount,
       lastUpdated: lastFetch,
     });
   } catch (error) {
@@ -105,8 +119,13 @@ export async function POST(request: NextRequest) {
 /**
  * Refresh news cache with deduplication
  */
-async function refreshNewsCache() {
+async function refreshNewsCache(): Promise<number> {
   try {
+    if (!isFirestoreAvailable()) {
+      console.error('❌ Firestore not available, cannot refresh news');
+      return 0;
+    }
+
     // Determine which sources to use
     const useRealTwitter = !!process.env.APIFY_API_TOKEN;
     const useRealTelegram = !!process.env.TELEGRAM_BOT_TOKEN;
@@ -151,7 +170,7 @@ async function refreshNewsCache() {
 
     if (newArticles.length === 0) {
       console.log('⚠️ No new articles returned from any source');
-      return;
+      return 0;
     }
 
     // Process and deduplicate
@@ -170,10 +189,13 @@ async function refreshNewsCache() {
       })
     );
 
-    // Deduplicate against existing cache
+    // Get recent articles from Firestore for deduplication (last 24 hours)
+    const recentArticles = await getRecentArticles(24);
+
+    // Deduplicate against Firestore
     const deduplicatedArticles = processedArticles.filter(newArticle => {
       // Check for exact duplicates
-      const exactDuplicate = articlesCache.some(
+      const exactDuplicate = recentArticles.some(
         existing => existing.contentHash === newArticle.contentHash
       );
 
@@ -183,7 +205,7 @@ async function refreshNewsCache() {
       }
 
       // Check for fuzzy duplicates (80% similarity threshold)
-      const fuzzyDuplicate = articlesCache.some(existing => {
+      const fuzzyDuplicate = recentArticles.some(existing => {
         const similarity = minHashDeduplicator.jaccardSimilarity(
           existing.minHash,
           newArticle.minHash
@@ -199,20 +221,27 @@ async function refreshNewsCache() {
       return true;
     });
 
-    console.log(`✅ Added ${deduplicatedArticles.length} new articles (${processedArticles.length - deduplicatedArticles.length} duplicates removed)`);
+    console.log(`✅ Found ${deduplicatedArticles.length} new articles (${processedArticles.length - deduplicatedArticles.length} duplicates removed)`);
 
-    // Add to cache and keep only last 200 articles
-    articlesCache = [...deduplicatedArticles, ...articlesCache].slice(0, 200);
-
-    console.log(`📊 Total articles in cache: ${articlesCache.length}`);
-
-    // Send push notification if there are new articles
+    // Save new articles to Firestore
     if (deduplicatedArticles.length > 0) {
-      // Don't await - send in background
+      const firestoreArticles = deduplicatedArticles.map(article => ({
+        ...article,
+        publishedAt: typeof article.publishedAt === 'string'
+          ? new Date(article.publishedAt).getTime()
+          : article.publishedAt,
+      })) as FirestoreArticle[];
+
+      await saveArticles(firestoreArticles);
+      console.log(`💾 Saved ${firestoreArticles.length} articles to Firestore`);
+
+      // Send push notification - don't await
       sendNewArticleNotification(deduplicatedArticles.length, deduplicatedArticles[0]).catch(err =>
         console.error('Failed to send push notification:', err)
       );
     }
+
+    return deduplicatedArticles.length;
   } catch (error) {
     console.error('Error refreshing news cache:', error);
     throw error;

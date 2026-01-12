@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import {
+  saveIncident,
+  getIncidents as getFirestoreIncidents,
+  isFirestoreAvailable,
+  Incident as FirestoreIncident,
+} from '@/lib/firestore';
 
 export interface Incident {
   id: string;
@@ -19,10 +25,9 @@ export interface Incident {
   createdAt: number;
 }
 
-// In-memory storage for development (migrate to DynamoDB in production)
-let incidentsCache: Incident[] = [
+// Mock data for seeding Firestore on first load
+const mockIncidents: Omit<Incident, 'id' | 'createdAt'>[] = [
   {
-    id: crypto.randomUUID(),
     type: 'protest',
     title: 'Large demonstration in Tehran',
     description: 'Thousands gathered in central Tehran demanding political reform. Heavy police presence reported.',
@@ -30,12 +35,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: true,
     reportedBy: 'official',
-    timestamp: Date.now() - 3600000, // 1 hour ago
+    timestamp: Date.now() - 3600000,
     upvotes: 47,
-    createdAt: Date.now() - 3600000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'arrest',
     title: 'Multiple arrests reported near University',
     description: 'Security forces detained at least 15 protesters near Tehran University campus.',
@@ -43,12 +46,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: true,
     reportedBy: 'official',
-    timestamp: Date.now() - 7200000, // 2 hours ago
+    timestamp: Date.now() - 7200000,
     upvotes: 23,
-    createdAt: Date.now() - 7200000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'protest',
     title: 'Solidarity protest in Isfahan',
     description: 'Citizens in Isfahan joined nationwide protests. Chants of freedom heard throughout the city.',
@@ -56,12 +57,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: true,
     reportedBy: 'official',
-    timestamp: Date.now() - 10800000, // 3 hours ago
+    timestamp: Date.now() - 10800000,
     upvotes: 31,
-    createdAt: Date.now() - 10800000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'injury',
     title: 'Injured protesters treated at makeshift clinics',
     description: 'Medical volunteers report treating dozens of injured protesters. Rubber bullets and tear gas used.',
@@ -69,12 +68,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: false,
     reportedBy: 'crowdsource',
-    timestamp: Date.now() - 5400000, // 1.5 hours ago
+    timestamp: Date.now() - 5400000,
     upvotes: 18,
-    createdAt: Date.now() - 5400000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'protest',
     title: 'Student demonstration at Sharif University',
     description: 'Engineering students walked out of classes in solidarity. University surrounded by security forces.',
@@ -82,12 +79,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: true,
     reportedBy: 'official',
-    timestamp: Date.now() - 14400000, // 4 hours ago
+    timestamp: Date.now() - 14400000,
     upvotes: 56,
-    createdAt: Date.now() - 14400000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'other',
     title: 'Internet disruption in multiple cities',
     description: 'Widespread internet outages reported. Mobile networks heavily throttled. VPN usage at all-time high.',
@@ -95,12 +90,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: true,
     reportedBy: 'official',
-    timestamp: Date.now() - 1800000, // 30 minutes ago
+    timestamp: Date.now() - 1800000,
     upvotes: 92,
-    createdAt: Date.now() - 1800000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'protest',
     title: 'Protests spread to Mashhad',
     description: 'Second largest city joins protests. Demonstrations at Imam Reza shrine area.',
@@ -108,12 +101,10 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: true,
     reportedBy: 'official',
-    timestamp: Date.now() - 18000000, // 5 hours ago
+    timestamp: Date.now() - 18000000,
     upvotes: 41,
-    createdAt: Date.now() - 18000000,
   },
   {
-    id: crypto.randomUUID(),
     type: 'death',
     title: 'Casualties reported in clashes',
     description: 'Unconfirmed reports of fatalities during confrontations with security forces. Exact numbers unclear.',
@@ -121,9 +112,8 @@ let incidentsCache: Incident[] = [
     images: [],
     verified: false,
     reportedBy: 'crowdsource',
-    timestamp: Date.now() - 21600000, // 6 hours ago
+    timestamp: Date.now() - 21600000,
     upvotes: 134,
-    createdAt: Date.now() - 21600000,
   },
 ];
 
@@ -158,30 +148,33 @@ export async function GET(request: NextRequest) {
     const westLon = searchParams.get('westLon');
     const type = searchParams.get('type');
 
-    let incidents = [...incidentsCache];
+    let incidents: FirestoreIncident[] = [];
 
-    // Filter by bounds if provided
-    if (northLat && southLat && eastLon && westLon) {
-      const north = parseFloat(northLat);
-      const south = parseFloat(southLat);
-      const east = parseFloat(eastLon);
-      const west = parseFloat(westLon);
+    if (isFirestoreAvailable()) {
+      incidents = await getFirestoreIncidents();
 
-      incidents = incidents.filter(incident =>
-        incident.location.lat <= north &&
-        incident.location.lat >= south &&
-        incident.location.lon <= east &&
-        incident.location.lon >= west
-      );
+      // Filter by bounds if provided (in-memory filtering for now)
+      if (northLat && southLat && eastLon && westLon) {
+        const north = parseFloat(northLat);
+        const south = parseFloat(southLat);
+        const east = parseFloat(eastLon);
+        const west = parseFloat(westLon);
+
+        incidents = incidents.filter(incident =>
+          incident.location.lat <= north &&
+          incident.location.lat >= south &&
+          incident.location.lon <= east &&
+          incident.location.lon >= west
+        );
+      }
+
+      // Filter by type if provided
+      if (type) {
+        incidents = incidents.filter(incident => incident.type === type);
+      }
+    } else {
+      console.warn('⚠️ Firestore not available, returning empty array');
     }
-
-    // Filter by type if provided
-    if (type) {
-      incidents = incidents.filter(incident => incident.type === type);
-    }
-
-    // Sort by timestamp (most recent first)
-    incidents.sort((a, b) => b.timestamp - a.timestamp);
 
     return NextResponse.json({
       incidents,
@@ -198,6 +191,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isFirestoreAvailable()) {
+      return NextResponse.json(
+        { error: 'Database unavailable' },
+        { status: 503 }
+      );
+    }
+
     // Rate limiting by IP
     const ip = request.headers.get('x-forwarded-for') ||
                request.headers.get('x-real-ip') ||
@@ -227,9 +227,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new incident
-    const newIncident: Incident = {
-      id: crypto.randomUUID(),
+    // Create new incident (without id and createdAt - Firestore will handle)
+    const newIncident: Omit<Incident, 'id' | 'createdAt'> = {
       type: body.type,
       title: body.title.trim(),
       description: body.description.trim(),
@@ -243,25 +242,23 @@ export async function POST(request: NextRequest) {
       reportedBy: 'crowdsource',
       timestamp: body.timestamp || Date.now(),
       upvotes: 0,
-      createdAt: Date.now(),
     };
 
-    // Add to cache
-    incidentsCache.unshift(newIncident);
+    // Save to Firestore
+    const incidentId = await saveIncident(newIncident);
 
-    // Keep only most recent 500 incidents in memory
-    if (incidentsCache.length > 500) {
-      incidentsCache = incidentsCache.slice(0, 500);
-    }
+    console.log(`📍 New incident reported: ${newIncident.type} - ${newIncident.title} (ID: ${incidentId})`);
 
-    console.log(`📍 New incident reported: ${newIncident.type} - ${newIncident.title}`);
-
-    // TODO: Trigger AI moderation Lambda in production
-    // await triggerModeration(newIncident);
+    // TODO: Trigger AI moderation in production
+    // await triggerModeration(incidentId);
 
     return NextResponse.json({
       success: true,
-      incident: newIncident,
+      incident: {
+        ...newIncident,
+        id: incidentId,
+        createdAt: Date.now(),
+      },
     }, { status: 201 });
 
   } catch (error) {

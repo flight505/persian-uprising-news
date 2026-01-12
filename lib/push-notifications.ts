@@ -28,7 +28,7 @@ export async function sendPushNotification(title: string, message: string, url?:
 
   try {
     const { getActiveSubscriptions } = await import('./subscriptions');
-    const subscriptions = getActiveSubscriptions();
+    const subscriptions = await getActiveSubscriptions();
 
     if (subscriptions.length === 0) {
       return { success: true, sent: 0 };
