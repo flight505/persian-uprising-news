@@ -128,22 +128,18 @@ async function refreshNewsCache(): Promise<number> {
     }
 
     // Determine which sources to use
-    const useRealTwitter = !!process.env.APIFY_API_TOKEN;
+    const useRealTwitter = false; // Disabled - Apify too expensive, Telegram provides better coverage
     const useUserAPITelegram = !!(process.env.TELEGRAM_SESSION_STRING && process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH);
     const useBotAPITelegram = !!process.env.TELEGRAM_BOT_TOKEN;
-    const twitterSource = useRealTwitter ? 'Apify' : 'Mock';
+    const twitterSource = 'Disabled';
     const telegramSource = useUserAPITelegram ? 'User API' : useBotAPITelegram ? 'Bot API' : 'Mock';
 
     // Fetch from multiple sources in parallel
-    console.log(`🔄 Fetching from Perplexity, Twitter (${twitterSource}), and Telegram (${telegramSource})...`);
+    console.log(`🔄 Fetching from Perplexity and Telegram (${telegramSource})...`);
+    console.log(`📊 Telegram credentials check: SESSION=${!!process.env.TELEGRAM_SESSION_STRING}, ID=${!!process.env.TELEGRAM_API_ID}, HASH=${!!process.env.TELEGRAM_API_HASH}`);
     const [perplexityArticles, twitterArticles, telegramArticles] = await Promise.all([
       fetchPerplexityNews(),
-      useRealTwitter
-        ? scrapeTwitter(50, 24).catch(err => {
-            console.error('❌ Twitter scraping failed, using mock data:', err);
-            return getMockTwitterArticles();
-          })
-        : getMockTwitterArticles(),
+      Promise.resolve([]), // Twitter disabled
       useUserAPITelegram
         ? (async () => {
             try {
@@ -168,7 +164,6 @@ async function refreshNewsCache(): Promise<number> {
     ]);
 
     console.log(`📰 Received ${perplexityArticles.length} articles from Perplexity`);
-    console.log(`🐦 Received ${twitterArticles.length} articles from Twitter (${twitterSource})`);
     console.log(`📱 Received ${telegramArticles.length} articles from Telegram (${telegramSource})`);
 
     // Normalize Twitter and Telegram articles to have 'topics' field (map from 'tags')
