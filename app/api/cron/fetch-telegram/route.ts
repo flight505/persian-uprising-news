@@ -2,7 +2,7 @@
  * Vercel Cron Job: Fetch Telegram news every 10 minutes
  *
  * IMPORTANT: This requires Vercel Pro ($20/month) for cron functionality
- * Configure in vercel.json: "schedule": "*/10 * * * *"
+ * Configure in vercel.json with schedule: every 10 minutes
  *
  * Vercel Pro: 60-second function timeout (enough for Telegram User API)
  */
