@@ -24,6 +24,17 @@ function detectLanguage(text: string): 'fa' | 'en' {
   return farsiPattern.test(text) ? 'fa' : 'en';
 }
 
+// Check if article likely describes an incident
+function containsIncidentKeywords(text: string): boolean {
+  const incidentKeywords = [
+    'protest', 'arrest', 'detained', 'clash', 'injured', 'killed', 'death',
+    'shooting', 'police', 'crackdown', 'demonstration', 'rally', 'gathering',
+    'tear gas', 'violence', 'casualty', 'shot', 'wounded', 'confrontation'
+  ];
+  const lowerText = text.toLowerCase();
+  return incidentKeywords.some(keyword => lowerText.includes(keyword));
+}
+
 export default function NewsCard({ id, title, summary, url, publishedAt, topics, source, author, channelName, content }: NewsCardProps) {
   const router = useRouter();
   const [isTranslated, setIsTranslated] = useState(false);
@@ -32,6 +43,7 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState('');
   const [detectedLang, setDetectedLang] = useState<'fa' | 'en'>('en');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const lang = detectLanguage(title + ' ' + summary);
@@ -217,16 +229,27 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
         </h2>
 
         {/* Summary */}
-        <p
-          className={cn(
-            "text-body text-muted-foreground mb-4 line-clamp-3",
-            "transition-opacity duration-300 leading-relaxed"
+        <div>
+          <p
+            className={cn(
+              "text-body text-muted-foreground mb-2 leading-relaxed",
+              !isExpanded && "line-clamp-3",
+              "transition-all duration-300"
+            )}
+            dir={isRTL ? 'rtl' : 'ltr'}
+            style={{ textAlign: isRTL ? 'right' : 'left' }}
+          >
+            {displaySummary}
+          </p>
+          {displaySummary.length > 200 && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              {isExpanded ? '← Show less' : 'Show more →'}
+            </button>
           )}
-          dir={isRTL ? 'rtl' : 'ltr'}
-          style={{ textAlign: isRTL ? 'right' : 'left' }}
-        >
-          {displaySummary}
-        </p>
+        </div>
 
         {/* Translation Button */}
         {detectedLang === 'fa' && (
@@ -298,23 +321,25 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
             </a>
           </div>
 
-          {/* Quick Report Button */}
-          <button
-            onClick={handleReportIncident}
-            className={cn(
-              "w-full px-3 py-2 rounded-lg",
-              "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30",
-              "border border-blue-200 dark:border-blue-800",
-              "text-blue-700 dark:text-blue-300",
-              "text-xs font-medium",
-              "transition-all duration-200",
-              "flex items-center justify-center gap-2",
-              "hover:scale-[1.02]"
-            )}
-          >
-            <span>📍</span>
-            <span>Report Incident from This Article</span>
-          </button>
+          {/* Quick Report Button - Only show for articles with incident keywords */}
+          {containsIncidentKeywords(title + ' ' + summary) && (
+            <button
+              onClick={handleReportIncident}
+              className={cn(
+                "w-full px-3 py-2 rounded-lg",
+                "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30",
+                "border border-blue-200 dark:border-blue-800",
+                "text-blue-700 dark:text-blue-300",
+                "text-xs font-medium",
+                "transition-all duration-200",
+                "flex items-center justify-center gap-2",
+                "hover:scale-[1.02]"
+              )}
+            >
+              <span>📍</span>
+              <span>Report Incident from This Article</span>
+            </button>
+          )}
         </div>
       </div>
     </article>

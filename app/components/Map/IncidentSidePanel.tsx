@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import TweetEmbed from './TweetEmbed';
+import TelegramEmbed from './TelegramEmbed';
 
 interface Incident {
   id: string;
@@ -256,6 +257,14 @@ export default function IncidentSidePanel({ incident, onClose }: IncidentSidePan
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Media Content</h3>
               <TweetEmbed url={incident.twitterUrl} isDarkMode={false} />
+            </div>
+          )}
+
+          {/* Telegram Content */}
+          {incident.telegramUrl && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Telegram Video</h3>
+              <TelegramEmbed url={incident.telegramUrl} isDarkMode={false} />
             </div>
           )}
 

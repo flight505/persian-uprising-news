@@ -8,11 +8,13 @@ import { updateIncident, getIncidents, isFirestoreAvailable } from '@/lib/firest
 
 // Real, CURRENT Twitter URLs from Iran-main (January 2026, verified working)
 // NOTE: Using x.com (not twitter.com) as per current Twitter/X branding
+// Added Telegram URLs for video embedding demonstration
 const INCIDENT_UPDATES = [
   {
     title: 'Large demonstration in Tehran',
     twitterUrl: 'https://x.com/Shayan86/status/2005987583445090377',
-    embedType: 'twitter' as const,
+    telegramUrl: 't.me/Shayan86/1234', // Example - replace with real channel
+    embedType: 'telegram' as const,
     tags: ['Mass Protest', 'Tehran', 'Police Response'],
   },
   {

@@ -278,9 +278,10 @@ export interface Incident {
 
   // Media embedding support (Priority 2)
   twitterUrl?: string;        // Primary Twitter post URL
+  telegramUrl?: string;       // Telegram post URL (channel/post_id)
   alternateUrl?: string;      // Alternate angle/view
   mediaUrls?: string[];       // Direct image/video URLs
-  embedType?: 'twitter' | 'image' | 'video';
+  embedType?: 'twitter' | 'telegram' | 'image' | 'video';
   tags?: string[];            // User-friendly tags (e.g., ["Gunfire", "Deaths"])
 }
 
