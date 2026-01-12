@@ -108,35 +108,50 @@ class OfflineDB {
   async cacheArticles(articles: ArticleInput[]): Promise<void> {
     if (!this.db) await this.init();
 
-    const transaction = this.db!.transaction([ARTICLES_STORE], 'readwrite');
-    const store = transaction.objectStore(ARTICLES_STORE);
-
     // Add cachedAt timestamp to each article
     const articlesWithCache = articles.map(article => ({
       ...article,
       cachedAt: Date.now(),
     }));
 
-    // Store all articles
-    for (const article of articlesWithCache) {
-      await store.put(article);
-    }
+    // Store all articles in a transaction
+    await new Promise<void>((resolve, reject) => {
+      const transaction = this.db!.transaction([ARTICLES_STORE], 'readwrite');
+      const store = transaction.objectStore(ARTICLES_STORE);
 
-    // Keep only the 50 most recent articles
+      // Store all articles
+      for (const article of articlesWithCache) {
+        store.put(article);
+      }
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+
+    console.log(`💾 Cached ${articles.length} articles for offline access`);
+
+    // Now clean up old articles in a separate transaction
     const allArticles = await this.getAllArticles();
     if (allArticles.length > 50) {
       const articlesToDelete = allArticles
         .sort((a, b) => b.cachedAt - a.cachedAt)
         .slice(50);
 
-      for (const article of articlesToDelete) {
-        await store.delete(article.id);
-      }
+      await new Promise<void>((resolve, reject) => {
+        const transaction = this.db!.transaction([ARTICLES_STORE], 'readwrite');
+        const store = transaction.objectStore(ARTICLES_STORE);
 
-      console.log(`🗑️  Removed ${articlesToDelete.length} old cached articles`);
+        for (const article of articlesToDelete) {
+          store.delete(article.id);
+        }
+
+        transaction.oncomplete = () => {
+          console.log(`🗑️  Removed ${articlesToDelete.length} old cached articles`);
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error);
+      });
     }
-
-    console.log(`💾 Cached ${articles.length} articles for offline access`);
   }
 
   /**
@@ -297,7 +312,7 @@ class OfflineDB {
       const store = transaction.objectStore(TRANSLATIONS_STORE);
       const request = store.get(articleId);
 
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         const translation = request.result as Translation | undefined;
         if (translation) {
           const age = Date.now() - translation.cachedAt;
@@ -306,8 +321,10 @@ class OfflineDB {
           if (age < maxAge) {
             resolve(translation);
           } else {
-            // Translation too old, delete it
-            store.delete(articleId);
+            // Translation too old, delete it in a separate transaction
+            const deleteTransaction = this.db!.transaction([TRANSLATIONS_STORE], 'readwrite');
+            const deleteStore = deleteTransaction.objectStore(TRANSLATIONS_STORE);
+            deleteStore.delete(articleId);
             resolve(null);
           }
         } else {
@@ -357,29 +374,45 @@ class OfflineDB {
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
     const now = Date.now();
 
-    const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readwrite');
-    const store = transaction.objectStore(TRANSLATIONS_STORE);
-    const index = store.index('cachedAt');
-    const request = index.openCursor();
+    // First, find old translations
+    const toDelete: string[] = await new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readonly');
+      const store = transaction.objectStore(TRANSLATIONS_STORE);
+      const index = store.index('cachedAt');
+      const request = index.openCursor();
+      const oldIds: string[] = [];
 
-    const toDelete: string[] = [];
-
-    request.onsuccess = (event) => {
-      const cursor = (event.target as IDBRequest).result;
-      if (cursor) {
-        const translation = cursor.value as Translation;
-        if (now - translation.cachedAt > maxAge) {
-          toDelete.push(translation.articleId);
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          const translation = cursor.value as Translation;
+          if (now - translation.cachedAt > maxAge) {
+            oldIds.push(translation.articleId);
+          }
+          cursor.continue();
+        } else {
+          resolve(oldIds);
         }
-        cursor.continue();
-      } else {
-        // Delete old translations
+      };
+
+      request.onerror = () => reject(request.error);
+    });
+
+    // Delete old translations in a separate transaction
+    if (toDelete.length > 0) {
+      await new Promise<void>((resolve, reject) => {
+        const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readwrite');
+        const store = transaction.objectStore(TRANSLATIONS_STORE);
+
         toDelete.forEach(id => store.delete(id));
-        if (toDelete.length > 0) {
+
+        transaction.oncomplete = () => {
           console.log(`🗑️  Removed ${toDelete.length} old translations`);
-        }
-      }
-    };
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error);
+      });
+    }
   }
 }
 

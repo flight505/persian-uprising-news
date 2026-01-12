@@ -9,6 +9,7 @@ import NewsCard from './NewsCard';
 import NotificationButton from '../Shared/NotificationButton';
 import SearchBar from '../Search/SearchBar';
 import Filters, { FilterState } from '../Search/Filters';
+import SuggestChannelModal from './SuggestChannelModal';
 import { offlineDB, isOnline } from '@/lib/offline-db';
 
 interface Article {
@@ -47,6 +48,7 @@ export default function NewsFeed() {
     dateRange: {},
   });
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
 
   const { data, error, isLoading, mutate } = useSWR<NewsResponse>(
     `/api/news?page=${page}&limit=20`,
@@ -188,6 +190,13 @@ export default function NewsFeed() {
               </Link>
             </Button>
             <Button
+              onClick={() => setIsSuggestModalOpen(true)}
+              variant="outline"
+              title="Suggest a news source to track"
+            >
+              📡 Suggest Source
+            </Button>
+            <Button
               onClick={handleRefresh}
               disabled={isRefreshing || isOffline}
               variant="default"
@@ -277,6 +286,12 @@ export default function NewsFeed() {
           Showing {allArticles.length} of {data?.pagination.total || allArticles.length} articles
         </div>
       )}
+
+      {/* Suggest Channel Modal */}
+      <SuggestChannelModal
+        isOpen={isSuggestModalOpen}
+        onClose={() => setIsSuggestModalOpen(false)}
+      />
     </div>
   );
 }

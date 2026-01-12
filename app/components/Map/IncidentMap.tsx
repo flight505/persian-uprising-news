@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap, LayersControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -83,18 +83,19 @@ function getIncidentIcon(type: string, verified: boolean) {
   });
 }
 
-// Component to update map view when incidents change
-function MapUpdater({ incidents }: { incidents: Incident[] }) {
+// Iran map boundaries (from Iran protest map reference)
+const IRAN_CENTER: [number, number] = [32.4279, 53.6880];
+const IRAN_BOUNDS: [[number, number], [number, number]] = [[24.5, 43.5], [40.0, 64.0]];
+
+// Component to reset map view to Iran
+function MapController() {
   const map = useMap();
 
   useEffect(() => {
-    if (incidents.length > 0) {
-      const bounds = L.latLngBounds(
-        incidents.map(inc => [inc.location.lat, inc.location.lon])
-      );
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-    }
-  }, [incidents, map]);
+    // Set max bounds to prevent panning outside Iran
+    map.setMaxBounds(IRAN_BOUNDS);
+    map.setMinZoom(5);
+  }, [map]);
 
   return null;
 }
@@ -209,10 +210,6 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
     return labels[type] || type;
   };
 
-  // Default center on Iran (Tehran)
-  const defaultCenter: [number, number] = [35.6892, 51.3890];
-  const defaultZoom = 6;
-
   if (!isMounted) {
     return (
       <div className="w-full h-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
@@ -223,11 +220,14 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
 
   return (
     <MapContainer
-      center={defaultCenter}
-      zoom={defaultZoom}
+      center={IRAN_CENTER}
+      zoom={5}
+      minZoom={5}
+      maxZoom={18}
       className="w-full h-full"
       style={{ height: '100%', width: '100%' }}
       scrollWheelZoom={true}
+      maxBounds={IRAN_BOUNDS}
     >
       <LayersControl position="topright">
         {/* Modern Style - CartoDB Voyager (Default) */}
@@ -269,7 +269,7 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
         </BaseLayer>
       </LayersControl>
 
-      <MapUpdater incidents={filteredIncidents} />
+      <MapController />
       <HeatmapLayer incidents={filteredIncidents} show={showHeatmap} />
 
       <MarkerClusterGroup
@@ -285,93 +285,25 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
             position={[incident.location.lat, incident.location.lon]}
             icon={getIncidentIcon(incident.type, incident.verified)}
             eventHandlers={{
-              click: () => onIncidentClick?.(incident),
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                onIncidentClick?.(incident);
+              },
             }}
           >
-            <Popup maxWidth={300}>
-              <div className="p-2">
-                {/* Type Badge */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      incident.type === 'protest'
-                        ? 'bg-red-100 text-red-800'
-                        : incident.type === 'arrest'
-                        ? 'bg-amber-100 text-amber-800'
-                        : incident.type === 'injury'
-                        ? 'bg-orange-100 text-orange-800'
-                        : incident.type === 'death'
-                        ? 'bg-red-200 text-red-900'
-                        : 'bg-indigo-100 text-indigo-800'
-                    }`}
-                  >
-                    {getTypeLabel(incident.type)}
-                  </span>
-                  {incident.verified && (
-                    <span className="text-xs text-green-600 font-medium">✓ Verified</span>
-                  )}
-                </div>
-
-                {/* Title */}
-                <h3 className="font-bold text-sm mb-1">{incident.title}</h3>
-
-                {/* Description */}
-                <p className="text-xs text-gray-600 mb-2">{incident.description}</p>
-
-                {/* Location */}
-                {incident.location.address && (
-                  <p className="text-xs text-gray-500 mb-1">
-                    📍 {incident.location.address}
-                  </p>
-                )}
-
-                {/* Images */}
-                {incident.images && incident.images.length > 0 && (
-                  <div className="my-2 grid grid-cols-2 gap-1">
-                    {incident.images.map((imageUrl, idx) => (
-                      <img
-                        key={idx}
-                        src={imageUrl}
-                        alt={`Incident ${idx + 1}`}
-                        className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-80 transition"
-                        onClick={() => window.open(imageUrl, '_blank')}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Timestamp */}
-                <p className="text-xs text-gray-400">{formatTimestamp(incident.timestamp)}</p>
-
-                {/* Upvotes */}
-                <div className="mt-2 flex items-center gap-1">
-                  <span className="text-xs text-gray-500">👍 {incident.upvotes}</span>
-                  <span className="text-xs text-gray-400 ml-2">
-                    {incident.reportedBy === 'official' ? '🔵 Official' : '👤 Crowdsourced'}
-                  </span>
-                </div>
-
-                {/* Related Articles */}
-                {incident.relatedArticles && incident.relatedArticles.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-gray-200">
-                    <p className="text-xs font-semibold text-gray-700 mb-1">📰 Sources:</p>
-                    <div className="space-y-1">
-                      {incident.relatedArticles.map((article, idx) => (
-                        <a
-                          key={idx}
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          <span className="text-gray-500">[{article.source}]</span> {article.title}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Tooltip for hover - sticky so it doesn't disappear immediately */}
+            <Tooltip
+              direction="top"
+              opacity={0.95}
+              offset={[0, -32]}
+              permanent={false}
+              sticky={true}
+            >
+              <div className="text-center px-2 py-1">
+                <div className="font-semibold text-sm mb-1">{incident.title}</div>
+                <div className="text-xs text-gray-600 font-medium">👆 Click marker for details</div>
               </div>
-            </Popup>
+            </Tooltip>
           </Marker>
         ))}
       </MarkerClusterGroup>

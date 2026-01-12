@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { translateText, detectLanguage, type SupportedLanguage } from '@/lib/translation';
+import { translateText, detectLanguage, type SupportedLanguage } from '@/lib/translation-robust';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 100;
@@ -102,22 +102,19 @@ export async function POST(req: NextRequest) {
       detectedLanguage: result.detectedLanguage || finalSourceLang,
       sourceLang: finalSourceLang,
       targetLang,
-      cached: false,
+      tier: result.tier, // Show which translation service was used
+      cached: result.tier === 'cache',
     });
   } catch (error) {
-    console.error('Translation API error:', error);
+    // With robust translation, this should never happen
+    // If it does, return a helpful error message
+    console.error('Translation API unexpected error:', error);
 
-    if (error instanceof Error && error.message.includes('unavailable')) {
-      return NextResponse.json(
-        { error: 'Translation service temporarily unavailable' },
-        { status: 503 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: 'Translation request failed',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      suggestion: 'Please check your request format and try again',
+    }, { status: 500 });
   }
 }
 

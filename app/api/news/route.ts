@@ -43,11 +43,19 @@ export async function GET(request: NextRequest) {
     const topicFilter = searchParams.get('topic');
 
     // Check if we need to refresh the cache
+    // DON'T AWAIT - run in background to not block users
     const now = Date.now();
     if (now - lastFetch > CACHE_DURATION) {
-      console.log('🔄 Fetching fresh news from sources...');
-      await refreshNewsCache();
-      lastFetch = now;
+      console.log('🔄 Fetching fresh news from sources (background)...');
+      refreshNewsCache()
+        .then(() => {
+          lastFetch = now;
+          console.log('✅ Background news refresh completed');
+        })
+        .catch(err => {
+          console.error('⚠️ Background news refresh failed (non-blocking):', err);
+          // Don't update lastFetch so we try again next time
+        });
     }
 
     // Get articles from Firestore
@@ -85,11 +93,21 @@ export async function GET(request: NextRequest) {
       lastUpdated: lastFetch,
     });
   } catch (error) {
-    console.error('Error in /api/news:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch news', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    // NEVER fail completely - always return something
+    console.error('Error in /api/news (returning empty gracefully):', error);
+
+    return NextResponse.json({
+      articles: [],
+      pagination: {
+        page: 0,
+        limit: 20,
+        total: 0,
+        hasMore: false,
+      },
+      lastUpdated: lastFetch,
+      warning: 'Temporary issue fetching latest news. Please refresh.',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
@@ -247,6 +265,11 @@ async function refreshNewsCache(): Promise<number> {
       await saveArticles(firestoreArticles);
       console.log(`💾 Saved ${firestoreArticles.length} articles to Firestore`);
 
+      // Auto-extract incidents from Telegram articles (don't await, run in background)
+      extractIncidentsFromArticles(normalizedTelegramArticles).catch(err =>
+        console.error('Failed to extract incidents:', err)
+      );
+
       // Send push notification - don't await
       sendNewArticleNotification(deduplicatedArticles.length, deduplicatedArticles[0]).catch(err =>
         console.error('Failed to send push notification:', err)
@@ -257,6 +280,92 @@ async function refreshNewsCache(): Promise<number> {
   } catch (error) {
     console.error('Error refreshing news cache:', error);
     throw error;
+  }
+}
+
+/**
+ * Auto-extract incidents from Telegram articles
+ */
+async function extractIncidentsFromArticles(articles: any[]) {
+  try {
+    if (articles.length === 0) {
+      return;
+    }
+
+    console.log(`🔍 Auto-extracting incidents from ${articles.length} Telegram articles...`);
+
+    // Import extraction functions
+    const { extractIncidentsFromArticles: extractFn } = await import('@/lib/incident-extractor');
+    const { geocodeLocations } = await import('@/lib/geocoder');
+    const { saveIncident, isFirestoreAvailable } = await import('@/lib/firestore');
+
+    if (!isFirestoreAvailable()) {
+      console.warn('⚠️ Firestore not available, skipping incident extraction');
+      return;
+    }
+
+    // Extract potential incidents
+    const extractedIncidents = extractFn(articles);
+
+    if (extractedIncidents.length === 0) {
+      console.log('ℹ️  No incidents extracted from articles');
+      return;
+    }
+
+    // Geocode all unique locations
+    const uniqueLocations = [...new Set(extractedIncidents.map((i) => i.location))];
+    console.log(`🗺️ Geocoding ${uniqueLocations.length} unique locations...`);
+
+    const geocodedLocations = await geocodeLocations(uniqueLocations);
+    console.log(`✅ Geocoded ${geocodedLocations.size} locations`);
+
+    // Build incidents with geocoded coordinates and filter by confidence
+    let savedCount = 0;
+    for (const extracted of extractedIncidents) {
+      try {
+        const geocoded = geocodedLocations.get(extracted.location);
+
+        if (!geocoded) {
+          console.log(`⚠️ Failed to geocode: ${extracted.location}`);
+          continue;
+        }
+
+        // Only save incidents with sufficient confidence (≥40%)
+        if (extracted.confidence < 40) {
+          console.log(`⚠️ Skipping low-confidence incident (${extracted.confidence}): ${extracted.title}`);
+          continue;
+        }
+
+        await saveIncident({
+          type: extracted.type,
+          title: extracted.title.substring(0, 200),
+          description: extracted.description.substring(0, 500),
+          location: {
+            lat: geocoded.lat,
+            lon: geocoded.lon,
+            address: geocoded.address,
+          },
+          verified: false, // Auto-extracted incidents need manual verification
+          reportedBy: 'official', // From news sources
+          timestamp: extracted.timestamp,
+          upvotes: 0,
+          confidence: extracted.confidence,
+          keywords: extracted.keywords,
+          relatedArticles: extracted.extractedFrom ? [{
+            title: extracted.extractedFrom.articleTitle,
+            url: extracted.extractedFrom.articleUrl,
+            source: extracted.extractedFrom.source
+          }] : undefined,
+        });
+        savedCount++;
+      } catch (err) {
+        console.error(`Failed to save incident: ${extracted.title}`, err);
+      }
+    }
+
+    console.log(`💾 Saved ${savedCount}/${extractedIncidents.length} auto-extracted incidents`);
+  } catch (error) {
+    console.error('Error in auto-extraction:', error);
   }
 }
 

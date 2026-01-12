@@ -217,11 +217,14 @@ export async function GET(request: NextRequest) {
       total: incidents.length,
     });
   } catch (error) {
-    console.error('Error in /api/incidents GET:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch incidents' },
-      { status: 500 }
-    );
+    // NEVER fail completely - return empty array with warning
+    console.error('Error in /api/incidents GET (returning empty gracefully):', error);
+    return NextResponse.json({
+      incidents: [],
+      total: 0,
+      warning: 'Temporary issue loading incidents. Please refresh.',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
@@ -299,9 +302,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in /api/incidents POST:', error);
-    return NextResponse.json(
-      { error: 'Failed to create incident' },
-      { status: 500 }
-    );
+
+    // Return detailed error for debugging, but don't completely fail
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to submit incident report',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      suggestion: 'Please check your connection and try again. Your report is important to us.',
+    }, { status: 500 });
   }
 }

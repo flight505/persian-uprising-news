@@ -7,21 +7,30 @@ import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
-  // In development, use service account key file
-  // In production (Vercel), use environment variable
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : process.env.NODE_ENV === 'development'
-    ? require('/Users/jesper/rise-up-firebase-key.json')
-    : null;
-
-  if (serviceAccount) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      projectId: 'coiled-cloud',
-    });
-  } else {
-    console.warn('⚠️ Firebase not initialized - missing service account credentials');
+  try {
+    // Priority 1: FIREBASE_SERVICE_ACCOUNT (Vercel production)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id,
+      });
+      console.log('✅ Firebase initialized with FIREBASE_SERVICE_ACCOUNT');
+    }
+    // Priority 2: GOOGLE_APPLICATION_CREDENTIALS (local development)
+    else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        projectId: process.env.GOOGLE_CLOUD_PROJECT || 'deposits-f29a0',
+      });
+      console.log('✅ Firebase initialized with GOOGLE_APPLICATION_CREDENTIALS');
+    }
+    // Priority 3: No credentials (fail gracefully)
+    else {
+      console.warn('⚠️ Firebase not initialized - missing credentials (FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS)');
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize Firebase:', error);
   }
 }
 
@@ -259,6 +268,8 @@ export interface Incident {
   timestamp: number;
   upvotes: number;
   createdAt: number;
+  confidence?: number; // For auto-extracted incidents (0-100)
+  keywords?: string[]; // Extraction keywords for debugging
   relatedArticles?: Array<{
     title: string;
     url: string;

@@ -53,11 +53,28 @@ function getTelegramConfig() {
 }
 
 // Channels to monitor (public channels, no admin access needed!)
+// Updated January 2026 with verified high-frequency sources
 const MONITORED_CHANNELS = [
-  '@BBCPersian',         // BBC Persian - verified working
-  '@IranIntlTV',         // Iran International - verified working
-  '@RadioFarda',         // Radio Farda - verified working
-  // Note: Add more channels as needed. Verify usernames at t.me/username
+  // Top 3 - Most frequent updates (verified working)
+  '@BBCPersian',         // BBC Persian - international verification
+  '@IranIntlTV',         // Iran International - top opposition news
+  '@RadioFarda',         // Radio Farda - human rights focus
+
+  // Live Updates & Clash Reports
+  '@ClashReport',        // Live clash maps/videos - hourly updates
+  '@noel_reports',       // Protest recaps with analysis
+  '@irbriefing',         // Briefing threads with #iranbriefing
+
+  // Official & Balance
+  '@Irna_en',           // IRNA state media (English) - government perspective
+
+  // Citizen Journalism
+  '@vahidonline',       // Citizen videos from protests (when available)
+
+  // Additional verified channels (add as needed)
+  // '@ManotoTV',       // Manoto TV
+  // '@IranWireFA',     // IranWire Farsi
+  // '@AvaToday',       // Ava Today
 ];
 
 // Keywords to filter for uprising-related content

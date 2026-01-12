@@ -241,8 +241,13 @@ function extractDescription(content: string): string {
 /**
  * Extract timestamp from article published date or content
  */
-function extractTimestamp(publishedAt: string, content: string): number {
-  // Parse published date
+function extractTimestamp(publishedAt: string | number, content: string): number {
+  // If already a number (Unix timestamp), return it
+  if (typeof publishedAt === 'number') {
+    return publishedAt;
+  }
+
+  // Parse published date string
   const pubDate = new Date(publishedAt);
   if (!isNaN(pubDate.getTime())) {
     return pubDate.getTime();
@@ -274,9 +279,10 @@ export function extractIncidentsFromArticle(article: {
   id: string;
   title: string;
   content: string;
-  url: string;
+  url?: string; // Optional for compatibility
+  sourceUrl?: string; // Telegram uses sourceUrl
   source: string;
-  publishedAt: string;
+  publishedAt: string | number;
 }): ExtractedIncident[] {
   const incidents: ExtractedIncident[] = [];
   const combinedText = `${article.title} ${article.content}`;
@@ -303,7 +309,7 @@ export function extractIncidentsFromArticle(article: {
             extractedFrom: {
               articleId: article.id,
               articleTitle: article.title,
-              articleUrl: article.url,
+              articleUrl: article.sourceUrl || article.url || '', // Handle both field names
               source: article.source,
             },
             timestamp: extractTimestamp(article.publishedAt, article.content),
@@ -321,7 +327,7 @@ export function extractIncidentsFromArticle(article: {
           extractedFrom: {
             articleId: article.id,
             articleTitle: article.title,
-            articleUrl: article.url,
+            articleUrl: article.sourceUrl || article.url || '', // Handle both field names
             source: article.source,
           },
           timestamp: extractTimestamp(article.publishedAt, article.content),

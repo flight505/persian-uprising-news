@@ -1,156 +1,191 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface TimelineSliderProps {
   minDate: Date;
   maxDate: Date;
   onDateRangeChange: (startDate: Date, endDate: Date) => void;
-  incidentCountByDay: Record<string, number>; // ISO date string -> count
+  onClearFilter?: () => void; // Callback to show all incidents
+  incidentCountByDay: Record<string, number>;
 }
 
 export default function TimelineSlider({
   minDate,
   maxDate,
   onDateRangeChange,
+  onClearFilter,
   incidentCountByDay,
 }: TimelineSliderProps) {
-  const [startValue, setStartValue] = useState(0);
-  const [endValue, setEndValue] = useState(30);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isTimelineActive, setIsTimelineActive] = useState(false); // Track if timeline is being used
 
-  // Calculate date range (last 30 days by default)
-  const totalDays = 30;
-  const today = new Date();
-  const daysAgo30 = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  // Generate array of unique dates from min to max
+  const generateDateRange = useCallback(() => {
+    const dates: Date[] = [];
+    const current = new Date(minDate);
+    const end = new Date(maxDate);
 
+    while (current <= end) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+  }, [minDate, maxDate]);
+
+  const uniqueDates = generateDateRange();
+
+  // Update date range when slider changes (only if timeline is active)
   useEffect(() => {
-    // Update date range when slider values change
-    const startDate = new Date(daysAgo30.getTime() + startValue * 24 * 60 * 60 * 1000);
-    const endDate = new Date(daysAgo30.getTime() + endValue * 24 * 60 * 60 * 1000);
-    onDateRangeChange(startDate, endDate);
-  }, [startValue, endValue, onDateRangeChange]);
+    if (isTimelineActive && uniqueDates.length > 0) {
+      const selectedDate = uniqueDates[currentIndex];
+      // Show 24 hours from selected date
+      const startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
 
-  const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (value <= endValue - 1) {
-      setStartValue(value);
+      onDateRangeChange(startDate, endDate);
     }
-  };
+  }, [isTimelineActive, currentIndex, uniqueDates, onDateRangeChange]);
 
-  const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (value >= startValue + 1) {
-      setEndValue(value);
+  // Auto-play timeline
+  useEffect(() => {
+    if (isPlaying && currentIndex < uniqueDates.length - 1) {
+      const timer = setTimeout(() => {
+        setCurrentIndex(prev => prev + 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (isPlaying && currentIndex >= uniqueDates.length - 1) {
+      setIsPlaying(false);
+      setCurrentIndex(0);
     }
+  }, [isPlaying, currentIndex, uniqueDates.length]);
+
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
-  const formatDate = (daysFromStart: number): string => {
-    const date = new Date(daysAgo30.getTime() + daysFromStart * 24 * 60 * 60 * 1000);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatDateWithWeekday = (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
-  const getIncidentCount = (): number => {
-    return Object.entries(incidentCountByDay)
-      .filter(([dateKey]) => {
-        const date = new Date(dateKey);
-        const startDate = new Date(daysAgo30.getTime() + startValue * 24 * 60 * 60 * 1000);
-        const endDate = new Date(daysAgo30.getTime() + endValue * 24 * 60 * 60 * 1000);
-        return date >= startDate && date <= endDate;
-      })
-      .reduce((sum, [, count]) => sum + count, 0);
-  };
+  const currentDate = uniqueDates[currentIndex] || uniqueDates[0];
+  const incidentCount = currentDate
+    ? incidentCountByDay[currentDate.toISOString().split('T')[0]] || 0
+    : 0;
 
-  // Reset to show all
-  const handleReset = () => {
-    setStartValue(0);
-    setEndValue(30);
-  };
-
-  if (isCollapsed) {
-    return (
-      <button
-        onClick={() => setIsCollapsed(false)}
-        className="flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition pointer-events-auto"
-        title="Expand timeline"
-      >
-        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-          {formatDate(startValue)} - {formatDate(endValue)}
-        </span>
-      </button>
-    );
+  if (uniqueDates.length === 0) {
+    return null;
   }
 
   return (
-    <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 pointer-events-auto">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            {formatDate(startValue)} - {formatDate(endValue)}
-          </span>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400">
-            ({getIncidentCount()} incidents)
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleReset}
-            className="px-2 py-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
-            title="Reset to all dates"
-          >
-            Reset
-          </button>
-          <button
-            onClick={() => setIsCollapsed(true)}
-            className="p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
-            title="Minimize timeline"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
+    <div className="w-full max-w-xl backdrop-blur-xl shadow-2xl rounded-2xl p-3 md:p-4 border flex flex-col space-y-3 transition-colors duration-300 timeline-flag-glass pointer-events-auto">
+      {/* Header */}
+      <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wide opacity-90 text-gray-800 dark:text-gray-200">
+        <span>Timeline</span>
+        <span className="flex items-center gap-2">
+          {isTimelineActive ? (
+            <>
+              {formatDateWithWeekday(currentDate)}
+              <span className="text-[10px] font-normal opacity-70">
+                ({incidentCount} incidents)
+              </span>
+            </>
+          ) : (
+            <span className="text-[10px] font-normal opacity-70">
+              Showing All Incidents
+            </span>
+          )}
+        </span>
       </div>
 
-      {/* Compact Dual Range Slider */}
-      <div className="relative h-6">
-        {/* Track */}
-        <div className="absolute top-1/2 -translate-y-1/2 w-full h-0.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
-
-        {/* Active Track */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 h-0.5 bg-blue-500 dark:bg-blue-400 rounded-full"
-          style={{
-            left: `${(startValue / totalDays) * 100}%`,
-            width: `${((endValue - startValue) / totalDays) * 100}%`,
+      {/* Controls */}
+      <div className="flex items-center space-x-3 md:space-x-4">
+        {/* Play/Pause Button */}
+        <button
+          onClick={() => {
+            setIsTimelineActive(true); // Activate timeline filtering
+            setIsPlaying(!isPlaying);
           }}
-        />
+          className={`p-2.5 rounded-full transition-colors active:scale-95 ${
+            isPlaying
+              ? 'bg-gray-700 text-white'
+              : 'bg-gray-900 text-white hover:bg-gray-700'
+          }`}
+          title={isPlaying ? 'Pause' : 'Play Timeline'}
+        >
+          {isPlaying ? (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
 
-        {/* Start Slider */}
-        <input
-          type="range"
-          min="0"
-          max={totalDays}
-          value={startValue}
-          onChange={handleStartChange}
-          className="absolute top-0 w-full h-6 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-blue-700 [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer hover:[&::-moz-range-thumb]:bg-blue-700"
-          style={{ zIndex: startValue > endValue - 5 ? 5 : 3 }}
-        />
+        {/* Slider Container */}
+        <div className="flex-1 relative flex items-center h-8">
+          <input
+            type="range"
+            min="0"
+            max={uniqueDates.length - 1}
+            value={currentIndex}
+            onChange={(e) => {
+              setIsTimelineActive(true); // Activate timeline filtering
+              setIsPlaying(false);
+              setCurrentIndex(parseInt(e.target.value));
+            }}
+            className="w-full h-8 bg-transparent rounded-lg appearance-none cursor-pointer z-10"
+          />
 
-        {/* End Slider */}
-        <input
-          type="range"
-          min="0"
-          max={totalDays}
-          value={endValue}
-          onChange={handleEndChange}
-          className="absolute top-0 w-full h-6 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-blue-700 [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer hover:[&::-moz-range-thumb]:bg-blue-700"
-          style={{ zIndex: 4 }}
-        />
+          {/* Visual Track */}
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-500/20 rounded-full pointer-events-none">
+            <div
+              className="h-full bg-blue-500/50 rounded-full transition-all duration-100"
+              style={{
+                width: `${(currentIndex / (uniqueDates.length - 1)) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Show All Button */}
+        <button
+          onClick={() => {
+            setIsPlaying(false);
+            setIsTimelineActive(false); // Deactivate timeline filtering
+            setCurrentIndex(0);
+            onClearFilter?.(); // Notify parent to show all incidents
+          }}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition active:scale-95 ${
+            !isTimelineActive
+              ? 'bg-gray-800 text-white border border-gray-800'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+          title="Show all incidents"
+        >
+          Show All
+        </button>
+      </div>
+
+      {/* Date Range Labels */}
+      <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 opacity-70">
+        <span>{formatDate(uniqueDates[0])}</span>
+        <span>{formatDate(uniqueDates[uniqueDates.length - 1])}</span>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import TimelineSlider from '../components/Map/TimelineSlider';
@@ -96,6 +96,16 @@ export default function MapPage() {
 
     return countByDay;
   };
+
+  // Memoize the date range change handler to prevent infinite re-renders
+  const handleDateRangeChange = useCallback((start: Date, end: Date) => {
+    setDateRange({ start, end });
+  }, []);
+
+  // Clear timeline filter to show all incidents
+  const handleClearFilter = useCallback(() => {
+    setDateRange(undefined);
+  }, []);
 
   const counts = getIncidentCounts();
   const incidentCountByDay = getIncidentCountByDay();
@@ -225,11 +235,14 @@ export default function MapPage() {
 
             {/* Floating Timeline Slider */}
             {incidents.length > 0 && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-[1000] pointer-events-none">
+              <div className={`absolute bottom-6 md:bottom-8 left-0 right-0 z-[1000] px-4 md:px-0 flex justify-center transition-all duration-300 ${
+                selectedIncident ? 'opacity-0 pointer-events-none' : ''
+              }`}>
                 <TimelineSlider
                   minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
                   maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
-                  onDateRangeChange={(start, end) => setDateRange({ start, end })}
+                  onDateRangeChange={handleDateRangeChange}
+                  onClearFilter={handleClearFilter}
                   incidentCountByDay={incidentCountByDay}
                 />
               </div>

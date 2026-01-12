@@ -4,6 +4,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   skipWaiting: true,
   disable: false, // Temporarily enabled for testing push notifications
   swSrc: 'public/sw-custom.js',
+  publicExcludes: ['!marker-icon*.png', '!marker-shadow*.png'], // Exclude Leaflet markers from precache
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/api\..*/i,

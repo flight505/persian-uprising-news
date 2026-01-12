@@ -521,3 +521,540 @@ My role is to synthesize and analyze the search results that have been provided 
  ○ (pwa)   Scope: /
  ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
  ✓ Ready in 3.7s
+ ○ Compiling /api/news ...
+ ✓ Compiled /api/news in 1256ms (610 modules)
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+🔄 Fetching fresh news from sources...
+🔄 Fetching from Perplexity and Telegram (User API)...
+📊 Telegram credentials check: SESSION=true, ID=true, HASH=true
+[33m[2026-01-12T16:52:16.868] [INFO] - [Running gramJS version 2.25.14][0m
+[33m[2026-01-12T16:52:16.873] [INFO] - [Connecting to 149.154.167.91:80/TCPFull...][0m
+(node:43735) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+[33m[2026-01-12T16:52:16.893] [INFO] - [Connection to 149.154.167.91:80/TCPFull complete!][0m
+[33m[2026-01-12T16:52:16.894] [INFO] - [Using LAYER 184 for initial connect][0m
+✅ Connected to Telegram User API
+✅ Fetched 15 messages from @BBCPersian
+✅ Fetched 29 messages from @IranIntlTV
+✅ Fetched 49 messages from @RadioFarda
+✅ Fetched 53 messages from @ClashReport
+✅ Fetched 61 messages from @noel_reports
+✅ Fetched 64 messages from @irbriefing
+✅ Fetched 65 messages from @Irna_en
+✅ Fetched 71 messages from @vahidonline
+[35m[2026-01-12T16:52:18.529] [WARN] - [Disconnecting...][0m
+[33m[2026-01-12T16:52:18.529] [INFO] - [Disconnecting from 149.154.167.91:80/TCPFull...][0m
+[33m[2026-01-12T16:52:18.529] [INFO] - [connection closed][0m
+📰 Received 7 articles from Perplexity
+📱 Received 71 articles from Telegram (User API)
+✅ Found 78 new articles (0 duplicates removed)
+💾 Saved 78 articles to Firestore
+🔍 Auto-extracting incidents from 71 Telegram articles...
+🗺️ Geocoding 18 unique locations...
+ GET /api/news 200 in 21346ms
+(node:43735) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+📬 Sent push notification to 1 subscriber(s)
+✅ Geocoded 18 locations
+Failed to save incident: **این ویدیو از اعتراضات آستارا به دست بی‌بی‌سی فارسی رسیده‌است و گفته می‌شود مربوط به جمعه ۱۹ دی باشد Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔺این ویدیو از میدان قدس تهران، خیابان باهنر به دست بی‌بی‌سی فارسی رسیده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔺این ویدیو از میدان قدس تهران، خیابان باهنر به دست بی‌بی‌سی فارسی رسیده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔺این ویدیو از میدان قدس تهران، خیابان باهنر به دست بی‌بی‌سی فارسی رسیده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: ⭕️ آنچه که تاکنون از تظاهرات ضد حکومتی در ایران می‌دانیم ⭕️ آنچه که تاکنون از تظاهرات ضد حکومتی د... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: ⭕️ آنچه که تاکنون از تظاهرات ضد حکومتی در ایران می‌دانیم ⭕️ آنچه که تاکنون از تظاهرات ضد حکومتی د... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (10): 🔻گروهی از ایرانیان که روز یکشنبه ۱۱ ژانویه (۲۱دی ۱۴۰۴)  مقابل کنسولگری ایران در فرانکفورت که در ...
+Failed to save incident: 🔺کانادا: حکومت ایران باید به سرکوب هولناک شهروندانش پایان دهد 🔺کانادا: حکومت ایران باید به سرکو... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔻کانادا: حکومت ایران باید به سرکوب هولناک شهروندانش پایان دهد 🔻کانادا: حکومت ایران باید به سرکو... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (31): 🔻کانادا: حکومت ایران باید به سرکوب هولناک شهروندانش پایان دهد 🔻کانادا: حکومت ایران باید به سرکو...
+Failed to save incident: 🔻صداوسیما تصاویری از راهپیمایی حامیان حکومت در چندین شهر ایران پخش کرده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔻صداوسیما تصاویری از راهپیمایی حامیان حکومت در چندین شهر ایران پخش کرده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (31): 🖌بخش مانیتورینگ بی‌بی‌سی: 🖌بخش مانیتورینگ بی‌بی‌سی:
+
+🔻رسانه‌های عربستان سعودی با ورود اعتراض‌ه...
+⚠️ Skipping low-confidence incident (10): 🖌بخش مانیتورینگ بی‌بی‌سی: 🖌بخش مانیتورینگ بی‌بی‌سی:
+
+🔻رسانه‌های عربستان سعودی با ورود اعتراض‌ه...
+⚠️ Skipping low-confidence incident (10): 🖌بخش مانیتورینگ بی‌بی‌سی: 🖌بخش مانیتورینگ بی‌بی‌سی:
+
+🔻رسانه‌های عربستان سعودی با ورود اعتراض‌ه...
+⚠️ Skipping low-confidence incident (31): دبیرکل سازمان ملل متحد در شبکه اجتماعی ایکس نوشت از گزارش‌های مربوط به خشونت بی‌حد مقام‌های ایرانی علیه معترضان شوکه شده است
+⚠️ Skipping low-confidence incident (10): دبیرکل سازمان ملل متحد در شبکه اجتماعی ایکس نوشت از گزارش‌های مربوط به خشونت بی‌حد مقام‌های ایرانی علیه معترضان شوکه شده است
+Failed to save incident: در پاسخ به فراخوان شاهزاده رضا پهلوی، یکشنبه ۲۱ دی، معترضان در ده‌ها شهر و بیش از ۲۰ استان ایران به خیابان‌ها آمدند و تجمع اعتراضی برگزار کردند Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: بر اساس ویدیوی رسیده به ایران‌اینترنشنال، گروهی از معترضان در کرج شامگاه یکشنبه ۲۱ دی در تجمع اعتراضی خود شعار «تا آخر هفته، سیدعلی رفته» سردادند Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: ویدیوی رسیده به ایران‌اینترنشنال نشان می‌دهد گروهی از معترضان در سعادت‌آباد تهران، شامگاه یکشنبه ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: ویدیوهای تازه رسیده به ایران‌اینترنشنال از اعتراضات پنجشنبه ۱۸ دی، مردم معترض تهران را در خیابان‌... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **پارلمان اروپا دسترسی دیپلمات‌ها و نمایندگان جمهوری اسلامی به دفاتر این نهاد را قطع کرد** **پارل... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **پارلمان اروپا دسترسی دیپلمات‌ها و نمایندگان جمهوری اسلامی به دفاتر این نهاد را قطع کرد** **پارل... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸تصاویر ارسالی به رادیوفردا نشان می‌دهند که شامگاه ۲۱ دی، جمعی از معترضان در منطقه پونک تهران تجمع کردند Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸تصاویر ارسالی به رادیوفردا نشان می‌دهند که شامگاه ۲۱ دی، جمعی از معترضان در منطقه پونک تهران تجمع کردند Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **تمامی خوابگاه‌های دانشجویی «برای جلوگیری از ادامۀ اعتراضات» تعطیل شدند** **تمامی خوابگاه‌های دا... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (10): 🔸غلامحسین اژه‌ای، رئیس قوه قضائیه جمهوری اسلامی با اشاره به مأموران سرکوبِ اعتراضات که در درگیری...
+Failed to save incident: 🔸بر اساس گزارش‌ها شهر اهواز شامگاه یک‌شنبه ۲۱ دی صحنه تجمع شهروندان معترض بوده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸بر اساس گزارش‌ها شهر اهواز شامگاه یک‌شنبه ۲۱ دی صحنه تجمع شهروندان معترض بوده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸بر اساس گزارش‌ها شهر اهواز شامگاه یک‌شنبه ۲۱ دی صحنه تجمع شهروندان معترض بوده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸صداوسیمای جمهوری اسلامی روز دوشنبه ۲۲ دی به پخش زنده و گسترده راهپیمایی در شهرهای مختلف که با فراخوان نهادهای حکومتی صورت گرفته اقدام کرد Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸صداوسیمای جمهوری اسلامی روز دوشنبه ۲۲ دی به پخش زنده و گسترده راهپیمایی در شهرهای مختلف که با فراخوان نهادهای حکومتی صورت گرفته اقدام کرد Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸 جعفر پناهی، کارگردان سرشناس ایرانی، که توانست جایزه «بهترین کارگردانی» انجمن منتقدان فیلم نیوی... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸 جعفر پناهی، کارگردان سرشناس ایرانی، که توانست جایزه «بهترین کارگردانی» انجمن منتقدان فیلم نیوی... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸وزیر امور خارجه ایران، روز دوشنبه ۲۲ دی گفت که ایران هم برای «جنگ» و هم برای «مذاکره» آماده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (10): 🔸تجمع اعتراضی ایرانیان مقیم لس‌آنجلس واقع در جنوب کالیفرنیا در حمایت از اعتراضات داخل ایران با رانده شدن یک خودرو به داخل جمعیت به ناآرامی کشید
+Failed to save incident: 🔸تصاویر منتشر شده در شبکه‌های اجتماعی که گفته می‌شود متعلق به ۲۱ دی ماه است، تشییع پیکر کشته‌شدگ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸تصاویر منتشر شده در شبکه‌های اجتماعی که گفته می‌شود متعلق به ۲۱ دی ماه است، تشییع پیکر کشته‌شدگ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **🔸صداوسیما از کشته‌شدن «رئیس پلیس مبارزه با مواد مخدر مشهد» خبر داد** **🔸صداوسیما از کشته‌شدن ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **🔸صداوسیما از کشته‌شدن «رئیس پلیس مبارزه با مواد مخدر مشهد» خبر داد** **🔸صداوسیما از کشته‌شدن ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **🔸صداوسیما از کشته‌شدن «رئیس پلیس مبارزه با مواد مخدر مشهد» خبر داد** **🔸صداوسیما از کشته‌شدن ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (31): **🔸سی‌بی‌اس نیوز: ترامپ در جریان گزینه‌های جدید نظامی دربارهٔ ایران قرار گرفته است** **🔸سی‌بی‌ا...
+⚠️ Skipping low-confidence incident (31): **وال‌استریت جورنال: ترامپ با اعضای ارشد کابینه‌اش سه‌شنبه درباره اعتراضات ایران جلسه برگزار می‌ک...
+Failed to save incident: 🔸ماریا کورینا ماچادو، برنده جایزه صلح نوبل و‌ چهرهٔ اصلی اپوزیسیون ونزوئلا، با انتشار پیامی از م... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: 🔸ماریا کورینا ماچادو، برنده جایزه صلح نوبل و‌ چهرهٔ اصلی اپوزیسیون ونزوئلا، با انتشار پیامی از م... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **پاپ لئو، رهبر کاتولیک‌های جهان: ذهنم درگیر اوضاع کنونی خاورمیانه، از جمله در ایران است** **پاپ ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: **پاپ لئو، رهبر کاتولیک‌های جهان: ذهنم درگیر اوضاع کنونی خاورمیانه، از جمله در ایران است** **پاپ ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: Thousands rallied in Tehran and other cities after calls from officials to show support for the government Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: Footage from Gorgan, Golestan, Iran reportedly very recent Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: Footage from Gorgan, Golestan, Iran reportedly very recent Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: Tehran, today: Protesters chant “This is the final battle, Pahlavi will return Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: در حالی که ایرانیان در حال برگزاری تجمع علیه جمهوری اسلامی و سر دادن شعارهایی در حمایت از شاهزاده... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (10): در حالی که ایرانیان در حال برگزاری تجمع علیه جمهوری اسلامی و سر دادن شعارهایی در حمایت از شاهزاده...
+⚠️ Skipping low-confidence incident (10): ‏شاهزاده رضا پهلوی در پیام جدید خود با اشاره به تظاهرات میلیونی دو هفته اخیر، آغاز مرحله جدیدی از...
+Failed to save incident: یکشنبه بیست‌و‌یکم دی‌ماه، آغاز اعتراضات مردمی در بندرعباس با شعار این آخرین نبرده پهلوی برمیگرده ... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (10): 🖥 **Iran ambassador condemns Western double standards in dealing with protests** 🖥 **Iran ambas...
+Failed to save incident: ‌🔸خبرگزاری فارس در کانال تلگرامی خود گزارش داده که شامگاه یک‌شنبه ۲۱ دی تجمعات اعتراضی علیه حکومت در محله‌های نواب و سعادت‌آباد تهران برگزار شده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: ‌🔸خبرگزاری فارس در کانال تلگرامی خود گزارش داده که شامگاه یک‌شنبه ۲۱ دی تجمعات اعتراضی علیه حکومت در محله‌های نواب و سعادت‌آباد تهران برگزار شده است Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (31): دونالد ترامپ، رییس‌جمهوری ایالات متحده، بامداد دوشنبه ۲۲ دی به وقت ایران، در گفت‌وگو با خبرنگاران...
+⚠️ Skipping low-confidence incident (10): دونالد ترامپ، رییس‌جمهوری ایالات متحده، بامداد دوشنبه ۲۲ دی به وقت ایران، در گفت‌وگو با خبرنگاران...
+Failed to save incident: شاهزاده رضا پهلوی، در جدیدترین اطلاعیه خود که عصر یکشنبه منتشر شد، گفته است از نظر او حکومت در ای... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+⚠️ Skipping low-confidence incident (10): شبکه آمریکایی ان‌بی‌سی گزارش داده است که در این رویداد که در محله «وست‌وود» رخ داد دست‌کم دو نفر پس از این حادثه معاینه شدند
+Failed to save incident: ♦️دو مقام رسمی آمریکا به «سی‌ان‌ان» گفتند که دونالد ترامپ، رئیس‌جمهوری ایالات متحده، در پی اعتراض... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+Failed to save incident: ♦️دو مقام رسمی آمریکا به «سی‌ان‌ان» گفتند که دونالد ترامپ، رئیس‌جمهوری ایالات متحده، در پی اعتراض... Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "relatedArticles.`0`.url"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at saveIncident (lib/firestore.ts:277:51)
+    at extractIncidentsFromArticles (app/api/news/route.ts:321:15)
+  275 |   if (!db) throw new Error('Firestore not initialized');
+  276 |
+> 277 |   const docRef = await db.collection('incidents').add({
+      |                                                   ^
+  278 |     ...incident,
+  279 |     createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  280 |   });
+💾 Saved 0/64 auto-extracted incidents
+[Error: TIMEOUT]
+[Error: TIMEOUT]
+[Error: TIMEOUT]
+[Error: TIMEOUT]
+[Error: TIMEOUT]
+[Error: TIMEOUT]
+ ✓ Compiled in 14ms
+[Error: TIMEOUT]
+[?25h
