@@ -16,6 +16,9 @@ const seedIncidents = [
     reportedBy: 'official' as const,
     timestamp: Date.now() - 3600000, // 1 hour ago
     upvotes: 47,
+    twitterUrl: 'https://twitter.com/BBCWorld/status/1574361943139430400',
+    embedType: 'twitter' as const,
+    tags: ['Mass Protest', 'Tehran', 'Police Response'],
   },
   {
     type: 'arrest' as const,
@@ -27,6 +30,9 @@ const seedIncidents = [
     reportedBy: 'official' as const,
     timestamp: Date.now() - 7200000, // 2 hours ago
     upvotes: 23,
+    twitterUrl: 'https://twitter.com/reuters/status/1574385547582210048',
+    embedType: 'twitter' as const,
+    tags: ['Arrests', 'Students', 'University'],
   },
   {
     type: 'protest' as const,
@@ -38,6 +44,9 @@ const seedIncidents = [
     reportedBy: 'official' as const,
     timestamp: Date.now() - 10800000, // 3 hours ago
     upvotes: 31,
+    twitterUrl: 'https://twitter.com/amnesty/status/1574421728645095424',
+    embedType: 'twitter' as const,
+    tags: ['Solidarity', 'Isfahan', 'Nationwide'],
   },
   {
     type: 'injury' as const,
@@ -49,6 +58,10 @@ const seedIncidents = [
     reportedBy: 'crowdsource' as const,
     timestamp: Date.now() - 5400000, // 1.5 hours ago
     upvotes: 18,
+    twitterUrl: 'https://twitter.com/hrw/status/1574392847291133952',
+    alternateUrl: 'https://twitter.com/AJEnglish/status/1574398234719875072',
+    embedType: 'twitter' as const,
+    tags: ['Injuries', 'Medical', 'Tear Gas', 'Rubber Bullets'],
   },
   {
     type: 'protest' as const,
@@ -60,6 +73,9 @@ const seedIncidents = [
     reportedBy: 'official' as const,
     timestamp: Date.now() - 14400000, // 4 hours ago
     upvotes: 56,
+    twitterUrl: 'https://twitter.com/AFP/status/1574372645819269120',
+    embedType: 'twitter' as const,
+    tags: ['Students', 'Sharif University', 'Walkout'],
   },
   {
     type: 'other' as const,
@@ -71,6 +87,9 @@ const seedIncidents = [
     reportedBy: 'official' as const,
     timestamp: Date.now() - 1800000, // 30 minutes ago
     upvotes: 92,
+    twitterUrl: 'https://twitter.com/netblocks/status/1574415923748425728',
+    embedType: 'twitter' as const,
+    tags: ['Internet Shutdown', 'Censorship', 'VPN'],
   },
   {
     type: 'protest' as const,
@@ -82,6 +101,9 @@ const seedIncidents = [
     reportedBy: 'official' as const,
     timestamp: Date.now() - 18000000, // 5 hours ago
     upvotes: 41,
+    twitterUrl: 'https://twitter.com/CNN/status/1574365847382724608',
+    embedType: 'twitter' as const,
+    tags: ['Mashhad', 'Spreading', 'Provincial Protests'],
   },
   {
     type: 'death' as const,
@@ -93,6 +115,10 @@ const seedIncidents = [
     reportedBy: 'crowdsource' as const,
     timestamp: Date.now() - 21600000, // 6 hours ago
     upvotes: 134,
+    twitterUrl: 'https://twitter.com/guardian/status/1574358492847702016',
+    alternateUrl: 'https://twitter.com/AP/status/1574363218947284992',
+    embedType: 'twitter' as const,
+    tags: ['Casualties', 'Deaths', 'Clashes', 'Violence'],
   },
 ];
 
