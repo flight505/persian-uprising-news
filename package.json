@@ -11,7 +11,16 @@
     "generate-vapid-keys": "tsx scripts/generate-vapid-keys.ts",
     "test-search": "tsx scripts/test-search.ts",
     "deploy-indexes": "firebase deploy --only firestore:indexes",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "benchmark": "tsx scripts/benchmark-performance.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:security": "tsx __tests__/security/run-all.ts",
+    "test:security:rate-limiter": "tsx __tests__/security/rate-limiter.test.ts",
+    "test:security:validators": "tsx __tests__/security/validators.test.ts",
+    "test:security:env": "tsx __tests__/security/env-validator.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.709.0",
@@ -51,6 +60,11 @@
   },
   "devDependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^22",
     "@types/node-telegram-bot-api": "^0.64.7",
@@ -59,10 +73,14 @@
     "@types/web-push": "^3.6.3",
     "eslint": "^9",
     "eslint-config-next": "^15.1.3",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
+    "ts-jest": "^29.4.6",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "undici": "^7.18.2"
   }
 }
