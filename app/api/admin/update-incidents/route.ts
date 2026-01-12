@@ -62,16 +62,16 @@ const INCIDENT_UPDATES = [
 ];
 
 export async function POST(request: NextRequest) {
-  // TEMP DISABLED: Update with current Jan 2026 tweet URLs
-  // if (process.env.ADMIN_SECRET) {
-  //   const adminSecret = request.headers.get('x-admin-secret');
-  //   if (adminSecret !== process.env.ADMIN_SECRET) {
-  //     return NextResponse.json(
-  //       { error: 'Unauthorized' },
-  //       { status: 401 }
-  //     );
-  //   }
-  // }
+  // Admin authentication (re-enabled after Jan 2026 URL update)
+  if (process.env.ADMIN_SECRET) {
+    const adminSecret = request.headers.get('x-admin-secret');
+    if (adminSecret !== process.env.ADMIN_SECRET) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+  }
 
   if (!isFirestoreAvailable()) {
     return NextResponse.json(
