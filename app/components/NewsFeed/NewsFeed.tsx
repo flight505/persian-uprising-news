@@ -3,8 +3,12 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
+import { Button } from '@/app/components/ui/button';
+import { cn } from '@/lib/utils';
 import NewsCard from './NewsCard';
 import NotificationButton from '../Shared/NotificationButton';
+import SearchBar from '../Search/SearchBar';
+import Filters, { FilterState } from '../Search/Filters';
 import { offlineDB, isOnline } from '@/lib/offline-db';
 
 interface Article {
@@ -38,26 +42,29 @@ export default function NewsFeed() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [isLoadingOffline, setIsLoadingOffline] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    topics: [],
+    dateRange: {},
+  });
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   const { data, error, isLoading, mutate } = useSWR<NewsResponse>(
     `/api/news?page=${page}&limit=20`,
     fetcher,
     {
-      refreshInterval: 600000, // Refresh every 10 minutes (matches server cache)
+      refreshInterval: 600000,
       revalidateOnFocus: false,
-      dedupingInterval: 60000, // Dedupe requests within 1 minute
-      keepPreviousData: true, // Keep showing old data while fetching new
+      dedupingInterval: 60000,
+      keepPreviousData: true,
     }
   );
 
-  // Initialize IndexedDB and monitor online status
   useEffect(() => {
     offlineDB.init().catch(err => console.error('Failed to init IndexedDB:', err));
 
     const handleOnlineStatus = () => {
       setIsOffline(!navigator.onLine);
 
-      // If coming back online, refresh data
       if (navigator.onLine && isOffline) {
         console.log('📡 Back online, refreshing data...');
         mutate();
@@ -74,7 +81,6 @@ export default function NewsFeed() {
     };
   }, [isOffline, mutate]);
 
-  // Update articles when data changes and cache them
   useEffect(() => {
     if (data?.articles) {
       if (page === 0) {
@@ -83,7 +89,6 @@ export default function NewsFeed() {
         setAllArticles(prev => [...prev, ...data.articles]);
       }
 
-      // Cache articles for offline access
       if (isOnline()) {
         offlineDB.cacheArticles(data.articles).catch(err =>
           console.error('Failed to cache articles:', err)
@@ -92,7 +97,6 @@ export default function NewsFeed() {
     }
   }, [data, page]);
 
-  // Load from cache if offline and no data
   useEffect(() => {
     if (isOffline && allArticles.length === 0 && !isLoadingOffline) {
       setIsLoadingOffline(true);
@@ -130,17 +134,14 @@ export default function NewsFeed() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-8">
-        <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-6">
-          <h3 className="text-red-800 dark:text-red-200 font-bold mb-2">Error Loading News</h3>
-          <p className="text-red-600 dark:text-red-300">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6">
+          <h3 className="text-destructive font-bold mb-2">Error Loading News</h3>
+          <p className="text-destructive/80 mb-4">
             {error.message || 'Failed to load news. Please try again later.'}
           </p>
-          <button
-            onClick={() => mutate()}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
+          <Button onClick={() => mutate()} variant="destructive">
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -150,9 +151,13 @@ export default function NewsFeed() {
     <div className="max-w-4xl mx-auto p-4 md:p-8">
       {/* Offline Banner */}
       {isOffline && (
-        <div className="mb-4 bg-yellow-50 dark:bg-yellow-900 border-l-4 border-yellow-400 p-4 rounded">
-          <div className="flex items-center">
-            <span className="text-2xl mr-3">📡</span>
+        <div className={cn(
+          "mb-6 p-4 rounded-lg border-l-4",
+          "bg-yellow-50 dark:bg-yellow-900/20",
+          "border-yellow-400 dark:border-yellow-600"
+        )}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📡</span>
             <div>
               <p className="font-bold text-yellow-800 dark:text-yellow-200">You're Offline</p>
               <p className="text-sm text-yellow-700 dark:text-yellow-300">
@@ -165,41 +170,58 @@ export default function NewsFeed() {
 
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Persian Uprising News
-          </h1>
-          <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-headline text-foreground mb-2">
+              Persian Uprising News
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Real-time news aggregation and incident mapping
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <SearchBar />
             <NotificationButton />
-            <Link
-              href="/map"
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              🗺️ Map
-            </Link>
-            <button
+            <Button asChild variant="secondary">
+              <Link href="/map">
+                🗺️ Map
+              </Link>
+            </Button>
+            <Button
               onClick={handleRefresh}
               disabled={isRefreshing || isOffline}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+              variant="default"
               title={isOffline ? 'Cannot refresh while offline' : 'Refresh news'}
             >
               {isRefreshing ? '🔄 Refreshing...' : '🔄 Refresh'}
-            </button>
+            </Button>
           </div>
         </div>
 
         {data?.lastUpdated && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
           </p>
         )}
       </div>
 
+      {/* Filters */}
+      <div className="mb-6">
+        <Filters
+          filters={filters}
+          onChange={setFilters}
+          onReset={() => {
+            setFilters({ topics: [], dateRange: {} });
+            setIsSearchMode(false);
+          }}
+        />
+      </div>
+
       {/* Loading State */}
       {(isLoading || isLoadingOffline) && allArticles.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+          <p className="text-muted-foreground">
             {isLoadingOffline ? 'Loading offline articles...' : 'Loading news...'}
           </p>
         </div>
@@ -208,15 +230,12 @@ export default function NewsFeed() {
       {/* Empty State */}
       {!isLoading && allArticles.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-xl text-muted-foreground mb-4">
             No news articles available yet.
           </p>
-          <button
-            onClick={handleRefresh}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
+          <Button onClick={handleRefresh} size="lg">
             Fetch News
-          </button>
+          </Button>
         </div>
       )}
 
@@ -225,6 +244,7 @@ export default function NewsFeed() {
         {allArticles.map((article) => (
           <NewsCard
             key={article.id}
+            id={article.id}
             title={article.title}
             summary={article.summary}
             url={article.url}
@@ -240,19 +260,20 @@ export default function NewsFeed() {
       {/* Load More Button */}
       {data?.pagination.hasMore && (
         <div className="mt-8 text-center">
-          <button
+          <Button
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            variant="outline"
+            size="lg"
           >
             {isLoading ? 'Loading...' : 'Load More'}
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Stats */}
       {allArticles.length > 0 && (
-        <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           Showing {allArticles.length} of {data?.pagination.total || allArticles.length} articles
         </div>
       )}

@@ -4,11 +4,12 @@
  */
 
 const DB_NAME = 'persian-uprising-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Store names
 const ARTICLES_STORE = 'articles';
 const PENDING_REPORTS_STORE = 'pendingReports';
+const TRANSLATIONS_STORE = 'translations';
 
 // Article without cachedAt (for input)
 type ArticleInput = {
@@ -40,6 +41,15 @@ interface PendingReport {
   };
   timestamp: number;
   createdAt: number;
+}
+
+interface Translation {
+  articleId: string;
+  originalText: string;
+  translatedText: string;
+  sourceLang: 'fa' | 'en';
+  targetLang: 'fa' | 'en';
+  cachedAt: number;
 }
 
 class OfflineDB {
@@ -79,6 +89,12 @@ class OfflineDB {
         if (!db.objectStoreNames.contains(PENDING_REPORTS_STORE)) {
           const reportsStore = db.createObjectStore(PENDING_REPORTS_STORE, { keyPath: 'id' });
           reportsStore.createIndex('createdAt', 'createdAt', { unique: false });
+        }
+
+        // Create translations store
+        if (!db.objectStoreNames.contains(TRANSLATIONS_STORE)) {
+          const translationsStore = db.createObjectStore(TRANSLATIONS_STORE, { keyPath: 'articleId' });
+          translationsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
         }
 
         console.log('📦 IndexedDB schema created');
@@ -223,17 +239,146 @@ class OfflineDB {
   /**
    * Get database statistics
    */
-  async getStats(): Promise<{ articles: number; pendingReports: number }> {
+  async getStats(): Promise<{ articles: number; pendingReports: number; translations: number }> {
     if (!this.db) await this.init();
 
-    const [articles, pendingReports] = await Promise.all([
+    const [articles, pendingReports, translations] = await Promise.all([
       this.getAllArticles(),
       this.getPendingReports(),
+      this.getAllTranslations(),
     ]);
 
     return {
       articles: articles.length,
       pendingReports: pendingReports.length,
+      translations: translations.length,
+    };
+  }
+
+  /**
+   * Cache a translation for an article
+   */
+  async cacheTranslation(
+    articleId: string,
+    originalText: string,
+    translatedText: string,
+    sourceLang: 'fa' | 'en',
+    targetLang: 'fa' | 'en'
+  ): Promise<void> {
+    if (!this.db) await this.init();
+
+    const translation: Translation = {
+      articleId,
+      originalText,
+      translatedText,
+      sourceLang,
+      targetLang,
+      cachedAt: Date.now(),
+    };
+
+    const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readwrite');
+    const store = transaction.objectStore(TRANSLATIONS_STORE);
+    await store.put(translation);
+
+    console.log('💾 Cached translation for article:', articleId);
+
+    // Clean up old translations (keep last 7 days)
+    await this.cleanupOldTranslations();
+  }
+
+  /**
+   * Get cached translation for an article
+   */
+  async getCachedTranslation(articleId: string): Promise<Translation | null> {
+    if (!this.db) await this.init();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readonly');
+      const store = transaction.objectStore(TRANSLATIONS_STORE);
+      const request = store.get(articleId);
+
+      request.onsuccess = () => {
+        const translation = request.result as Translation | undefined;
+        if (translation) {
+          const age = Date.now() - translation.cachedAt;
+          const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+          if (age < maxAge) {
+            resolve(translation);
+          } else {
+            // Translation too old, delete it
+            store.delete(articleId);
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get all cached translations
+   */
+  async getAllTranslations(): Promise<Translation[]> {
+    if (!this.db) await this.init();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readonly');
+      const store = transaction.objectStore(TRANSLATIONS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result as Translation[]);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Clear all cached translations
+   */
+  async clearTranslations(): Promise<void> {
+    if (!this.db) await this.init();
+
+    const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readwrite');
+    const store = transaction.objectStore(TRANSLATIONS_STORE);
+    await store.clear();
+
+    console.log('🗑️  Cleared all cached translations');
+  }
+
+  /**
+   * Clean up translations older than 7 days
+   */
+  private async cleanupOldTranslations(): Promise<void> {
+    if (!this.db) await this.init();
+
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+    const now = Date.now();
+
+    const transaction = this.db!.transaction([TRANSLATIONS_STORE], 'readwrite');
+    const store = transaction.objectStore(TRANSLATIONS_STORE);
+    const index = store.index('cachedAt');
+    const request = index.openCursor();
+
+    const toDelete: string[] = [];
+
+    request.onsuccess = (event) => {
+      const cursor = (event.target as IDBRequest).result;
+      if (cursor) {
+        const translation = cursor.value as Translation;
+        if (now - translation.cachedAt > maxAge) {
+          toDelete.push(translation.articleId);
+        }
+        cursor.continue();
+      } else {
+        // Delete old translations
+        toDelete.forEach(id => store.delete(id));
+        if (toDelete.length > 0) {
+          console.log(`🗑️  Removed ${toDelete.length} old translations`);
+        }
+      }
     };
   }
 }

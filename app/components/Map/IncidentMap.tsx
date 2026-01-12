@@ -5,8 +5,9 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'r
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.heat';
 
-const { BaseLayer } = LayersControl;
+const { BaseLayer, Overlay } = LayersControl;
 
 // Fix for default marker icons in Next.js
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -48,6 +49,8 @@ interface IncidentMapProps {
   incidents: Incident[];
   selectedType?: string;
   onIncidentClick?: (incident: Incident) => void;
+  dateRange?: { start: Date; end: Date };
+  showHeatmap?: boolean;
 }
 
 // Color-coded custom icons for different incident types
@@ -96,7 +99,63 @@ function MapUpdater({ incidents }: { incidents: Incident[] }) {
   return null;
 }
 
-export default function IncidentMap({ incidents, selectedType, onIncidentClick }: IncidentMapProps) {
+// Heatmap layer component
+function HeatmapLayer({ incidents, show }: { incidents: Incident[]; show: boolean }) {
+  const map = useMap();
+  const heatLayerRef = useRef<L.HeatLayer | null>(null);
+
+  useEffect(() => {
+    if (!show) {
+      if (heatLayerRef.current) {
+        map.removeLayer(heatLayerRef.current);
+        heatLayerRef.current = null;
+      }
+      return;
+    }
+
+    // Create heatmap points with intensity based on incident type
+    const heatPoints = incidents.map((incident) => {
+      const intensity =
+        incident.type === 'death' ? 1.0
+        : incident.type === 'injury' ? 0.7
+        : incident.type === 'arrest' ? 0.5
+        : 0.3; // protest, other
+
+      return [incident.location.lat, incident.location.lon, intensity] as [number, number, number];
+    });
+
+    // Remove old layer if exists
+    if (heatLayerRef.current) {
+      map.removeLayer(heatLayerRef.current);
+    }
+
+    // Create new heatmap layer
+    heatLayerRef.current = (L as any).heatLayer(heatPoints, {
+      radius: 25,
+      blur: 35,
+      maxZoom: 17,
+      max: 1.0,
+      gradient: {
+        0.0: '#0000ff',
+        0.3: '#00ff00',
+        0.5: '#ffff00',
+        0.7: '#ff8800',
+        1.0: '#ff0000',
+      },
+    }).addTo(map);
+
+    return () => {
+      if (heatLayerRef.current) {
+        map.removeLayer(heatLayerRef.current);
+        heatLayerRef.current = null;
+      }
+    };
+  }, [incidents, show, map]);
+
+  return null;
+}
+
+export default function IncidentMap({ incidents, selectedType, onIncidentClick, dateRange, showHeatmap = false }: IncidentMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const mapInitialized = useRef(false);
 
@@ -107,10 +166,21 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick }
     }
   }, []);
 
-  // Filter incidents by type if selected
-  const filteredIncidents = selectedType
-    ? incidents.filter(inc => inc.type === selectedType)
-    : incidents;
+  // Filter incidents by type and date range
+  let filteredIncidents = incidents;
+
+  // Filter by type
+  if (selectedType) {
+    filteredIncidents = filteredIncidents.filter(inc => inc.type === selectedType);
+  }
+
+  // Filter by date range
+  if (dateRange) {
+    filteredIncidents = filteredIncidents.filter(inc => {
+      const incidentDate = new Date(inc.timestamp);
+      return incidentDate >= dateRange.start && incidentDate <= dateRange.end;
+    });
+  }
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -200,6 +270,7 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick }
       </LayersControl>
 
       <MapUpdater incidents={filteredIncidents} />
+      <HeatmapLayer incidents={filteredIncidents} show={showHeatmap} />
 
       <MarkerClusterGroup
         chunkedLoading

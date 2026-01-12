@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import TimelineSlider from '../components/Map/TimelineSlider';
+import IncidentModal from '../components/Map/IncidentModal';
 
 // Dynamic import for Leaflet to avoid SSR issues
 const IncidentMap = dynamic(
@@ -33,6 +35,9 @@ export default function MapPage() {
   const [selectedType, setSelectedType] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | undefined>(undefined);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
   useEffect(() => {
     fetchIncidents();
@@ -56,8 +61,16 @@ export default function MapPage() {
   };
 
   const getIncidentCounts = () => {
+    // Filter by date range if set
+    const visibleIncidents = dateRange
+      ? incidents.filter(inc => {
+          const incDate = new Date(inc.timestamp);
+          return incDate >= dateRange.start && incDate <= dateRange.end;
+        })
+      : incidents;
+
     const counts: Record<string, number> = {
-      all: incidents.length,
+      all: visibleIncidents.length,
       protest: 0,
       arrest: 0,
       injury: 0,
@@ -65,14 +78,27 @@ export default function MapPage() {
       other: 0,
     };
 
-    incidents.forEach(incident => {
+    visibleIncidents.forEach(incident => {
       counts[incident.type] = (counts[incident.type] || 0) + 1;
     });
 
     return counts;
   };
 
+  const getIncidentCountByDay = () => {
+    const countByDay: Record<string, number> = {};
+
+    incidents.forEach(incident => {
+      const date = new Date(incident.timestamp);
+      const dateKey = date.toISOString().split('T')[0];
+      countByDay[dateKey] = (countByDay[dateKey] || 0) + 1;
+    });
+
+    return countByDay;
+  };
+
   const counts = getIncidentCounts();
+  const incidentCountByDay = getIncidentCountByDay();
 
   const filterButtons = [
     { type: '', label: 'All Incidents', count: counts.all, color: 'bg-gray-600' },
@@ -159,6 +185,16 @@ export default function MapPage() {
               🔵 {incidents.filter(i => i.reportedBy === 'official').length} Official
             </span>
             <button
+              onClick={() => setShowHeatmap(!showHeatmap)}
+              className={`px-2 py-1 rounded text-xs font-medium transition ${
+                showHeatmap
+                  ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              }`}
+            >
+              🔥 {showHeatmap ? 'Hide' : 'Show'} Heatmap
+            </button>
+            <button
               onClick={fetchIncidents}
               className="ml-auto text-blue-600 dark:text-blue-400 hover:underline"
             >
@@ -167,6 +203,20 @@ export default function MapPage() {
           </div>
         </div>
       </div>
+
+      {/* Timeline Slider */}
+      {incidents.length > 0 && (
+        <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <TimelineSlider
+              minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
+              maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
+              onDateRangeChange={(start, end) => setDateRange({ start, end })}
+              incidentCountByDay={incidentCountByDay}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Map Container */}
       <div className="flex-1 relative">
@@ -181,9 +231,18 @@ export default function MapPage() {
           <IncidentMap
             incidents={incidents}
             selectedType={selectedType}
+            dateRange={dateRange}
+            showHeatmap={showHeatmap}
+            onIncidentClick={(incident) => setSelectedIncident(incident)}
           />
         )}
       </div>
+
+      {/* Incident Detail Modal */}
+      <IncidentModal
+        incident={selectedIncident}
+        onClose={() => setSelectedIncident(null)}
+      />
 
       {/* Legend */}
       <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-10">

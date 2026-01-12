@@ -1,0 +1,80 @@
+'use client';
+
+import { FixedSizeList } from 'react-window';
+import { useEffect, useState } from 'react';
+import NewsCard from './NewsCard';
+
+interface Article {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  publishedAt: string;
+  topics: string[];
+  source?: 'perplexity' | 'twitter' | 'telegram';
+  author?: string;
+  channelName?: string;
+}
+
+interface VirtualListProps {
+  articles: Article[];
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+}
+
+export default function VirtualList({ articles, onLoadMore, hasMore }: VirtualListProps) {
+  const [windowHeight, setWindowHeight] = useState(800);
+  const [windowWidth, setWindowWidth] = useState(1200);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight);
+      setWindowWidth(window.innerWidth);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const article = articles[index];
+
+    // Trigger load more when approaching end
+    if (index === articles.length - 3 && hasMore && onLoadMore) {
+      onLoadMore();
+    }
+
+    return (
+      <div style={{ ...style, padding: '12px 0' }}>
+        <NewsCard
+          key={article.id}
+          id={article.id}
+          title={article.title}
+          summary={article.summary}
+          url={article.url}
+          publishedAt={article.publishedAt}
+          topics={article.topics}
+          source={article.source}
+          author={article.author}
+          channelName={article.channelName}
+        />
+      </div>
+    );
+  };
+
+  // Estimate row height based on typical card height
+  const itemSize = 280;
+
+  return (
+    <FixedSizeList
+      height={windowHeight - 400}
+      itemCount={articles.length}
+      itemSize={itemSize}
+      width={windowWidth > 768 ? 896 : windowWidth - 32}
+      overscanCount={3}
+    >
+      {Row}
+    </FixedSizeList>
+  );
+}

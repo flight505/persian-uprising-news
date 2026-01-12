@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { GeistSans } from 'geist/font/sans'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={GeistSans.className}>
       <head>
         {/* iOS PWA meta tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -44,7 +45,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#1a202c" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
       </head>
-      <body className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+      <body className="antialiased">
         {children}
       </body>
     </html>

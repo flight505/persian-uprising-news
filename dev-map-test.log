@@ -451,3 +451,73 @@ My role is to synthesize and analyze the search results that have been provided 
  ✓ Compiled in 550ms (229 modules)
  ✓ Compiled in 296ms (229 modules)
  ✓ Compiled in 295ms (229 modules)
+ ✓ Compiled in 270ms (215 modules)
+ ✓ Compiled in 250ms (215 modules)
+ ✓ Compiled in 280ms (215 modules)
+ ✓ Compiled in 262ms (215 modules)
+ ✓ Compiled in 422ms (229 modules)
+ ✓ Compiled in 517ms (215 modules)
+ ✓ Compiled in 287ms (229 modules)
+ ✓ Compiled in 311ms (229 modules)
+ ✓ Compiled in 271ms (215 modules)
+ ✓ Compiled in 443ms (215 modules)
+ ✓ Compiled in 247ms (229 modules)
+ ✓ Compiled in 425ms (215 modules)
+ ✓ Compiled in 241ms (229 modules)
+ ✓ Compiled in 229ms (229 modules)
+ ✓ Compiled in 223ms (229 modules)
+ ✓ Compiled in 240ms (229 modules)
+ ✓ Compiled in 237ms (229 modules)
+ ✓ Compiled in 234ms (229 modules)
+ ✓ Compiled in 186ms (215 modules)
+ ✓ Compiled in 291ms (229 modules)
+ ✓ Compiled in 280ms (229 modules)
+ ✓ Compiled in 265ms (229 modules)
+ ✓ Compiled in 247ms (229 modules)
+ ✓ Compiled in 236ms (229 modules)
+ ✓ Compiled in 223ms (229 modules)
+ ✓ Compiled in 240ms (229 modules)
+ ✓ Compiled in 443ms (229 modules)
+ ✓ Compiled in 247ms (229 modules)
+ ✓ Compiled in 295ms (229 modules)
+   Reload env: .env
+ ✓ Compiled in 230ms (215 modules)
+ ✓ Compiled in 239ms (229 modules)
+ ✓ Compiled in 257ms (229 modules)
+ ✓ Compiled in 251ms (229 modules)
+ ✓ Compiled in 229ms (229 modules)
+ ✓ Compiled in 275ms (215 modules)
+ ✓ Compiled in 299ms (229 modules)
+ ✓ Compiled in 272ms (229 modules)
+   Reload env: .env
+ ✓ Compiled in 788ms (229 modules)
+ ✓ Compiled in 256ms (229 modules)
+ ✓ Compiled in 260ms (229 modules)
+ ✓ Compiled in 238ms (229 modules)
+ ✓ Compiled in 230ms (215 modules)
+ ✓ Compiled in 238ms (229 modules)
+ ✓ Compiled in 206ms (229 modules)
+ ✓ Compiled in 234ms (229 modules)
+ ✓ Compiled in 246ms (229 modules)
+ ✓ Compiled in 321ms (229 modules)
+   Reload env: .env
+ ✓ Compiled in 265ms (215 modules)
+ ✓ Compiled in 277ms (229 modules)
+ ✓ Compiled in 250ms (229 modules)
+ ✓ Compiled in 259ms (229 modules)
+ ✓ Compiled in 295ms (229 modules)
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.68.52:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for client (static)...
+ ○ (pwa) Service worker: /Users/jesper/Projects/Dev_projects/Rise_up/public/sw.js
+ ○ (pwa)   URL: /sw.js
+ ○ (pwa)   Scope: /
+ ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
+ ✓ Ready in 3.7s

@@ -8,10 +8,11 @@ A Progressive Web App (PWA) for real-time news aggregation and incident mapping 
 
 - **Multi-Source News Aggregation**: Fetches news from Perplexity API, Twitter (Apify scraper), and Telegram channels
 - **Intelligent Deduplication**: Uses MinHash + LSH algorithm to detect and remove duplicate articles (80% similarity threshold)
+- **Translation Support**: Google Cloud Translation API integration for Farsi ↔ English translation with caching and RTL support
 - **Interactive Map**: Leaflet-based map with clustered markers, multiple tile layers (Modern, Topographic, Satellite, Dark Mode)
 - **Crowdsourced Reporting**: Users can submit incident reports with location and type
 - **Push Notifications**: Web Push API with VAPID keys for breaking news alerts
-- **Offline Support**: IndexedDB caching for offline article access and background sync for queued reports
+- **Offline Support**: IndexedDB caching for offline article access, background sync for queued reports, and persistent translation cache
 - **Mobile-First PWA**: Installable on iOS and Android with home screen icon and splash screens
 
 ## Architecture
@@ -44,6 +45,7 @@ A Progressive Web App (PWA) for real-time news aggregation and incident mapping 
 ├── React-Leaflet
 ├── SWR
 ├── IndexedDB
+├── Google Cloud Translation API
 ├── Web Push API
 ├── Service Workers
 └── PWA (next-pwa)
@@ -58,11 +60,12 @@ A Progressive Web App (PWA) for real-time news aggregation and incident mapping 
     /news/route.ts           # News aggregation endpoint
     /push/route.ts           # Push notification sender
     /subscribe/route.ts      # Push subscription management
+    /translate/route.ts      # Translation API with rate limiting
   /components
     /Map
       IncidentMap.tsx        # Main map component with clustering
       LocationPicker.tsx     # Interactive location selector for reports
-      NewsCard.tsx           # Article card component
+      NewsCard.tsx           # Article card component with translation
     /NewsFeed
       NewsFeed.tsx           # Infinite scroll news feed
     /Shared
@@ -74,9 +77,10 @@ A Progressive Web App (PWA) for real-time news aggregation and incident mapping 
 
 /lib
   /minhash.ts                # MinHash + LSH deduplication algorithm
-  /offline-db.ts             # IndexedDB wrapper for offline storage
+  /offline-db.ts             # IndexedDB wrapper with translation cache
   /perplexity.ts             # Perplexity API integration
   /telegram.ts               # Telegram Bot API integration
+  /translation.ts            # Google Cloud Translation API service
   /twitter.ts                # Twitter/Apify scraper integration
 
 /public
@@ -205,6 +209,7 @@ useEffect(() => {
 - Perplexity API: $3.60/month (720 calls with optimizations)
 - Twitter/Apify: $7.00/month (web scraping, official API is $100+/month)
 - Telegram: $0.00/month (free Bot API)
+- Google Translation API: $0.00/month (free tier: 500k chars, ~75k expected usage)
 - Vercel: $0.00/month (free tier)
 - AWS: $0.00/month (free tier)
 
@@ -231,6 +236,10 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key_here
 # Cloudflare Images (optional, for production image uploads)
 CLOUDFLARE_API_TOKEN=your_token_here
 CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+
+# Google Cloud Translation API
+GOOGLE_CLOUD_PROJECT=coiled-cloud
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 
 # Base URL (for production)
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
@@ -326,7 +335,9 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
 
 ## Future Enhancements
 
-- [ ] Multi-language support (English + Farsi)
+- [x] Translation support (Farsi ↔ English with Google Cloud Translation API)
+- [ ] Auto-translate preference setting
+- [ ] Multi-language support (add Arabic, Turkish)
 - [ ] Search functionality (Algolia free tier)
 - [ ] User accounts for favorites
 - [ ] Analytics dashboard
@@ -334,6 +345,7 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
 - [ ] Browser extension for quick reporting
 - [ ] RSS feed
 - [ ] Dark mode toggle (currently auto via system preference)
+- [ ] Google Gemini Pro integration for cheaper translations
 
 ## Contributing
 
