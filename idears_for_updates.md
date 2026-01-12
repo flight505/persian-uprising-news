@@ -390,3 +390,339 @@ That’s why I’m pushing snapshots + signatures so hard: it’s the closest yo
 [6]: https://www.accessnow.org/help/?utm_source=chatgpt.com "Digital Security Helpline"
 [7]: https://www.eff.org/pages/surveillance-self-defense?utm_source=chatgpt.com "Surveillance Self-Defense"
 [8]: https://tacticaltech.org/projects/security-in-a-box/?utm_source=chatgpt.com "Security In-a-box"
+
+
+You’re aiming at two hard problems at once:
+
+1. **How do we still *receive* fresh information when the normal pipes are choked or cut?**
+2. **How do we keep people from being manipulated (disinfo), without accidentally putting anyone in more danger?**
+
+I’ll propose feature sets that directly serve “families abroad need up‑to‑date truth,” and I’ll be explicit about what I *won’t* recommend because it’s unsafe.
+
+---
+
+## Feature Set A: “Blackout resilient” information intake (how you keep receiving reports)
+
+A web app can’t magically receive data from a *total* national shutdown — but in real life, “blackout” is often partial, intermittent, or bypassed by a minority of users (satellite, cross-border roaming, brief reconnect windows, circumvention tools, local mesh sharing, etc.). Your job is to design for **any** path that exists.
+
+### A1) Tor-accessible intake + mirror (not just “users use Tor”)
+
+**Add two Tor surfaces:**
+
+* **Onion mirror** of your read-only “lite” site (news + snapshots)
+* **Onion submission portal** for incident reports / tips
+
+Tor onion services hide the service IP/location and provide end-to-end encryption by default; they’re also designed to be censorship-resistant *as long as Tor is reachable*. ([Support][2])
+
+Practical UX features:
+
+* A persistent “Open via Tor” link (and a short explainer)
+* A **copyable onion URL** displayed as text and QR code
+* A “Submission safety checklist” before upload (no faces, no names, no exact addresses, etc.)
+
+If Tor itself is blocked, users often rely on Tor pluggable transports like **Snowflake** (volunteer proxies) to reach the Tor network. ([Support][3])
+(You can link to official Tor guidance rather than reinvent it.)
+
+### A2) “Offline packs” + file import/export (your most powerful blackout primitive)
+
+This is the single biggest feature that helps *both* inside/outside users:
+
+* Your backend periodically produces **signed “offline snapshot packs”**:
+
+  * last 6h / 24h / 7d
+  * lightweight JSON + optional compressed media
+  * cryptographic signature so tampering is detectable
+
+* Your app supports:
+
+  * **Download pack** when online
+  * **Import pack** from a file (AirDrop, WhatsApp, email, USB, Bluetooth share, etc.)
+  * **Verify signature** and show “Authentic / Modified / Unknown publisher”
+
+This is how you keep information moving when the transport layer is hostile.
+
+### A3) Decentralized distribution of snapshots (IPFS as a mirror layer)
+
+Publish those signed snapshot packs to **IPFS** as content-addressed objects (CID). IPFS content addressing (CIDs) means the same content can be fetched from many places and still verifies by hash. ([docs.ipfs.tech][4])
+
+How it becomes useful:
+
+* Diaspora volunteers “pin” the latest CID.
+* Your app can try multiple public gateways (or your own gateways) to fetch the CID.
+* The pack is still verified locally by signature.
+
+Important caveat: IPFS is not a privacy tool by itself; treat published content as public. (That’s why you keep packs text-first and avoid sensitive PII by design.)
+
+### A4) “Mesh relay mode” for the mobile app (Bluetooth/Wi‑Fi local sync)
+
+To move *any* information during *true* internet blackouts, local device-to-device sync is one of the only remaining channels.
+
+You do **not** need to build a full messenger. Add a focused feature:
+
+* “Share latest offline pack to nearby devices” (Bluetooth / Wi‑Fi Direct)
+* “Scan QR to import a micro‑snapshot” (for very small deltas)
+
+This aligns with how apps like **Briar** and **Manyverse** approach blackouts:
+
+* Briar explicitly supports communicating during blackouts via Bluetooth/Wi‑Fi (and uses Tor when internet is up). ([briarproject.org][5])
+* Manyverse (SSB) supports offline-first sync between devices over Bluetooth/Wi‑Fi/Internet. ([NLnet Foundation][6])
+
+You can also let power users “export as Briar/Manyverse-friendly text blocks” so diaspora relays can repost without friction.
+
+### A5) Matrix/Nostr “relay channels” (for diaspora + redundancy)
+
+Create an **official outbound feed** on decentralized/federated systems, so updates can fan out even if your domain is blocked:
+
+* **Matrix room** (federated) for “official updates,” with E2EE optional depending on use-case. Matrix is designed for decentralized communication; E2EE is based on Olm/Megolm. ([Matrix][7])
+* **Nostr** publisher that posts:
+
+  * “Top verified updates”
+  * the latest snapshot CID(s)
+  * hash/signature fingerprints
+
+Nostr is an open relay-based protocol designed for censorship-resistant publishing (users sign events with keys; relays can vary). ([GitHub][8])
+
+Why this helps families abroad: even if your main site is down, they can still subscribe to these feeds and retrieve the snapshot pack through alternate mirrors.
+
+---
+
+## Feature Set B: OSINT you *should* build (event & narrative OSINT, not person-tracking)
+
+Think of OSINT features in two buckets:
+
+### B1) “Verification workbench” (internal/moderator-facing)
+
+A protected dashboard that helps moderators verify claims safely:
+
+* **Cross-source corroboration panel**
+  “Same incident reported by X independent sources?”
+
+* **Media dedupe + reuse detection**
+  perceptual hashes to detect recycled videos/images
+
+* **Time/location plausibility checks** (careful!)
+  Only store/display **coarse geolocation publicly** (city/region). Keep fine details internal if needed.
+
+* **Chain-of-custody**
+  Every incident gets:
+
+  * submit time
+  * evidence attachments
+  * reviewer notes
+  * verification outcome + reason
+
+This is OSINT that improves trust without enabling targeting.
+
+### B2) “Source registry” (trust without doxxing)
+
+Families abroad need to know *who/what to trust*.
+
+Implement a source system that supports:
+
+* “Verified source” badges **without revealing real identities**
+* per-source “reliability history” (how often confirmed vs later retracted)
+* “first seen” timestamps and provenance links
+
+If you do allow “trusted correspondents,” do it with **key-based identity** (signing keys), not usernames/phone numbers.
+
+---
+
+## Feature Set C: Disinformation detection + “campaign explainer” pages
+
+You want: *“people can click and see this is a disinformation campaign …”*
+To do this responsibly, you need two layers:
+
+1. **Detection:** identify suspicious coordinated behavior and false/unsupported claims
+2. **Attribution:** only claim “state-run” when a credible public source has attributed it
+
+### C1) Build a “Claims” system (atomic, reviewable units)
+
+Instead of tagging whole articles as disinfo, track **claims**:
+
+Each claim page shows:
+
+* Claim text (in Persian + English)
+* Status: Unverified / Disputed / False / True / Misleading
+* Evidence list (sources, media, documents)
+* “What would change our mind” (helps trust)
+* Revision history (transparency)
+
+### C2) Automated campaign signals (what you can compute)
+
+This is where you borrow ideas from tools like BotSlayer/Hoaxy.
+
+**BotSlayer** is explicitly built to detect potential manipulation/amplification on Twitter/X in real time. ([osome.iu.edu][9])
+OSoMe also maintains open-source components for **Hoaxy**, which visualizes spread of claims and fact-checking. ([osome.iu.edu][10])
+
+You can implement similar detectors in your pipeline (even if you don’t literally embed those apps):
+
+**Coordination / amplification signals**
+
+* bursty posting with near-identical text across many accounts
+* synchronized repost timing
+* unusual hashtag/link co-occurrence
+* “many accounts, low organic engagement”
+
+**Infrastructure signals**
+
+* suspicious domains (lookalike “news” sites)
+* repeated use of the same shortened links
+* content farms reusing templates
+
+**Narrative signals**
+
+* cluster content into “narratives” using multilingual embeddings
+* track narrative growth rate + cross-platform jumps (Telegram → X → sites)
+
+### C3) “Disinformation Campaign” pages (what users see)
+
+When a narrative is flagged, show:
+
+* The narrative summary (“What’s being pushed”)
+* Timeline of spread
+* Top amplifying clusters (aggregate, not individual callouts)
+* Similar past campaigns (if any)
+* What’s verified / what’s not
+
+### C4) Attribution: do it with receipts, or don’t do it
+
+If you label something “Iranian government campaign,” you need *public, credible attribution*.
+
+You can build your attribution library from:
+
+* **Meta threat reporting / CIB takedowns** ([transparency.meta.com][11])
+* **Microsoft Threat Analysis Center (MTAC) influence reports** (example: they describe Iranian cyber-enabled influence activity in election context) ([Microsoft][12])
+* **OpenAI threat intelligence writeups** (example: “Disrupting a covert Iranian influence operation”) ([OpenAI][13])
+* **Government sanctions / official statements** when they exist (example: U.S. Treasury sanctions included language about Iran/Russia disinformation campaigns) ([U.S. Department of the Treasury][14])
+
+Product rule:
+
+* If you have explicit third-party attribution: display “Attributed by X (link)”
+* If you don’t: say “Suspected coordinated inauthentic behavior” (CIB) and show evidence, **without** naming an actor.
+
+That keeps you credible and reduces legal/ethical risk.
+
+---
+
+## Feature Set D: Dashboards with live, useful metrics (families abroad + operators)
+
+### D1) “Blackout & interference” dashboard (live context)
+
+This is *hugely* valuable because it answers “why did updates stop?”
+
+Integrate:
+
+**IODA (outage detection)**
+
+* outage events + summary via API ([api.ioda.inetintel.cc.gatech.edu][15])
+
+**OONI (censorship measurements)**
+
+* OONI API lets you search measurements and generate stats; it’s open data. ([OONI Docs][16])
+
+**GRIP (routing incidents / suspicious hijacks)**
+
+* Georgia Tech’s dashboard list explicitly pairs IODA with GRIP for routing incidents. ([inetintel on Notion][17])
+* GRIP has a documented events API endpoint and parameters. ([GitHub][18])
+
+Dashboard widgets:
+
+* “Connectivity index (country + major ISPs/ASNs)”
+* “Last observed outage event”
+* “Routing anomaly count (24h)”
+* “Censorship measurement spikes”
+
+### D2) “Situation overview” dashboard (what families actually want)
+
+Widgets that answer real questions fast:
+
+* Verified incidents (24h / 7d)
+* Reports by region (coarse)
+* Arrests/injuries/casualties trend (only if verified carefully)
+* “Newest verified update” timestamp
+* “Top 3 emerging narratives”
+* “Top 3 flagged disinfo narratives”
+
+### D3) “Information integrity” dashboard (anti-disinfo control room)
+
+For moderators/operators:
+
+* number of new claims flagged
+* top coordination clusters (aggregate)
+* top reused media hashes
+* verification queue SLA
+* retractions/corrections count
+
+---
+
+## Feature Set E: “How do we get info during a blackout?” — the human + technical loop
+
+The missing piece is usually not tech, it’s **a relay network**.
+
+Build features that support a *diaspora relay program*:
+
+### E1) Trusted Relay accounts (pseudonymous, key-based)
+
+* A relay is a diaspora volunteer who has offline/phone contact with someone inside.
+* They submit tips through your portal (clearnet or onion).
+* Their submissions are signed by a relay key (reputation accrues to the key).
+
+### E2) “Microtask verification”
+
+Let diaspora volunteers help verify without seeing sensitive details:
+
+* translate a report
+* categorize it
+* check if it duplicates another report
+* match it to a location *at city level*
+
+### E3) “Call for data” prompts tied to outages
+
+When IODA indicates an outage spike, prompt:
+
+* “If you have intermittent connectivity, submit a short text-only update.”
+* “If you’re abroad and receiving direct calls, submit *what you can safely share*.”
+
+---
+
+## If you want a crisp build order
+
+### Phase 1 (highest ROI)
+
+* Signed offline snapshot packs + import/export
+* Onion mirror + onion submission
+* Lite mode + text-first delivery
+
+### Phase 2
+
+* Disinfo: Claims system + campaign pages + coordination signals
+* Dashboards: IODA + OONI + GRIP integration
+
+### Phase 3
+
+* Decentralized distribution: IPFS CIDs + Nostr publisher + Matrix room
+* Mobile mesh sharing of snapshot packs (Bluetooth/Wi‑Fi)
+
+---
+
+If you tell me your current backend constraints (where you can run long-lived services vs purely serverless, and whether you’re comfortable adding a small worker service for streaming ingestion + detection), I can map these features into a concrete architecture for your repo structure (data models, pipelines, and UI routes) — without drifting into anything that could endanger users.
+
+[1]: https://github.com/HunxByts/GhostTrack "GitHub - HunxByts/GhostTrack: Useful tool to track location or mobile number"
+[2]: https://support.torproject.org/tor-browser/features/onion-services/?utm_source=chatgpt.com "Onion services - Features - Tor Browser - Support"
+[3]: https://support.torproject.org/anti-censorship/what-is-snowflake/?utm_source=chatgpt.com "What is Snowflake? - Anti-censorship - Support - Tor Project"
+[4]: https://docs.ipfs.tech/concepts/content-addressing/?utm_source=chatgpt.com "Content Identifiers (CIDs) - IPFS Docs"
+[5]: https://briarproject.org/how-it-works/?utm_source=chatgpt.com "How it works"
+[6]: https://nlnet.nl/project/Manyverse/?utm_source=chatgpt.com "Manyverse"
+[7]: https://matrix.org/docs/matrix-concepts/end-to-end-encryption/?utm_source=chatgpt.com "End-to-End Encryption implementation guide"
+[8]: https://github.com/nostr-protocol/nostr?utm_source=chatgpt.com "Nostr - Notes and Other Stuff Transmitted by Relays"
+[9]: https://osome.iu.edu/research/blog/botslayer?utm_source=chatgpt.com "BotSlayer tool to expose disinformation networks"
+[10]: https://osome.iu.edu/resources/open-source?utm_source=chatgpt.com "Open Source - Observatory on Social Media - Indiana University"
+[11]: https://transparency.meta.com/metasecurity/threat-reporting/?utm_source=chatgpt.com "Meta's threat disruptions"
+[12]: https://www.microsoft.com/en-us/security/security-insider/threat-landscape/iran-steps-into-us-election-2024-with-cyber-enabled-influence-operations?utm_source=chatgpt.com "Iran's Cyber Influence on the 2024 US Election"
+[13]: https://openai.com/index/disrupting-a-covert-iranian-influence-operation/?utm_source=chatgpt.com "Disrupting a covert Iranian influence operation"
+[14]: https://home.treasury.gov/news/press-releases/jy2766?utm_source=chatgpt.com "Treasury Sanctions Entities in Iran and Russia That ..."
+[15]: https://api.ioda.inetintel.cc.gatech.edu/v2/?utm_source=chatgpt.com "IODA HTTP API"
+[16]: https://docs.ooni.org/data?utm_source=chatgpt.com "Accessing OONI data"
+[17]: https://inetintel.notion.site/Dashboards-2b132433c5384853a7dad3a9c8d03e58?pvs=21 "Dashboards | Notion"
+[18]: https://github.com/InetIntel/grip-api-legacy/blob/master/api-spec.md?utm_source=chatgpt.com "grip-api-legacy/api-spec.md at master"
+

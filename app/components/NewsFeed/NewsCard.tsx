@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Badge } from '@/app/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { offlineDB } from '@/lib/offline-db';
@@ -24,19 +23,7 @@ function detectLanguage(text: string): 'fa' | 'en' {
   return farsiPattern.test(text) ? 'fa' : 'en';
 }
 
-// Check if article likely describes an incident
-function containsIncidentKeywords(text: string): boolean {
-  const incidentKeywords = [
-    'protest', 'arrest', 'detained', 'clash', 'injured', 'killed', 'death',
-    'shooting', 'police', 'crackdown', 'demonstration', 'rally', 'gathering',
-    'tear gas', 'violence', 'casualty', 'shot', 'wounded', 'confrontation'
-  ];
-  const lowerText = text.toLowerCase();
-  return incidentKeywords.some(keyword => lowerText.includes(keyword));
-}
-
 export default function NewsCard({ id, title, summary, url, publishedAt, topics, source, author, channelName, content }: NewsCardProps) {
-  const router = useRouter();
   const [isTranslated, setIsTranslated] = useState(false);
   const [translatedTitle, setTranslatedTitle] = useState('');
   const [translatedSummary, setTranslatedSummary] = useState('');
@@ -166,20 +153,6 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
     twitter: '𝕏',
     telegram: '✈️',
     perplexity: '🔍'
-  };
-
-  const handleReportIncident = () => {
-    // Store article data in sessionStorage for pre-filling the report form
-    if (id) {
-      sessionStorage.setItem('reportFromArticle', JSON.stringify({
-        articleId: id,
-        articleTitle: title,
-        articleUrl: url,
-        articleContent: content || summary,
-        articleSource: source || 'unknown',
-      }));
-    }
-    router.push('/report');
   };
 
   return (
@@ -320,26 +293,6 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
               <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
             </a>
           </div>
-
-          {/* Quick Report Button - Only show for articles with incident keywords */}
-          {containsIncidentKeywords(title + ' ' + summary) && (
-            <button
-              onClick={handleReportIncident}
-              className={cn(
-                "w-full px-3 py-2 rounded-lg",
-                "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30",
-                "border border-blue-200 dark:border-blue-800",
-                "text-blue-700 dark:text-blue-300",
-                "text-xs font-medium",
-                "transition-all duration-200",
-                "flex items-center justify-center gap-2",
-                "hover:scale-[1.02]"
-              )}
-            >
-              <span>📍</span>
-              <span>Report Incident from This Article</span>
-            </button>
-          )}
         </div>
       </div>
     </article>

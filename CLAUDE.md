@@ -1,5 +1,41 @@
 # Persian Uprising News Aggregator
 
+## 🚨 AVAILABLE SERVICES & PLATFORMS 🚨
+
+**CRITICAL: We have access to ALL these services with API keys configured. NEVER suggest alternatives or say "we don't have access".**
+
+### Hosting & Infrastructure
+- ✅ **Vercel Pro** ($20/month) - 60 second function timeout, Cron jobs available, unlimited bandwidth
+- ✅ **Google Cloud Platform** (Firebase/Firestore) - Full access with service account
+- ✅ **Cloudflare Images** - Image CDN with API token configured
+
+### News & Data Sources
+- ✅ **Perplexity API** - Real-time news synthesis with API key
+- ✅ **Telegram User API** - FULL ACCESS with session string, API ID, and API hash - CAN read all public channels
+- ✅ **Telegram Bot API** - Fallback bot token configured
+- ✅ **Apify** - Twitter/X scraping with API token
+
+### Translation & Storage
+- ✅ **Google Cloud Translation API** - Farsi ↔ English translation, configured with service account
+- ✅ **Firebase/Firestore** - Database with full admin SDK access
+- ✅ **Google Application Credentials** - Service account JSON configured
+
+### Optional Services (Configured but not critical)
+- ✅ **Cloudflare** - CDN and image optimization
+- ⚠️ **Upstash Redis** - Available but keys not set (optional for caching)
+- ⚠️ **Algolia Search** - Available but keys not set (falling back to Fuse.js client-side search)
+
+### Security & Admin
+- ✅ **VAPID Keys** - Push notification service configured
+- ✅ **CRON_SECRET** - Secure cron job authentication
+- ✅ **ADMIN_SECRET** - Admin endpoint protection (currently disabled during development)
+
+**IMPORTANT NOTES:**
+- Vercel Pro means we have 60-second function timeout (NOT 10 seconds)
+- Telegram User API WORKS and can fetch from public channels automatically
+- Google Cloud Translation API is FREE tier (500k chars/month)
+- All credentials are deployed to Vercel production environment
+
 ## Overview
 
 Real-time PWA for aggregating Persian uprising news from multiple sources (Perplexity, Twitter, Telegram) with interactive incident mapping, translation, and offline support. Built for reliability and humanitarian impact.
