@@ -275,6 +275,13 @@ export interface Incident {
     url: string;
     source: string;
   }>;
+
+  // Media embedding support (Priority 2)
+  twitterUrl?: string;        // Primary Twitter post URL
+  alternateUrl?: string;      // Alternate angle/view
+  mediaUrls?: string[];       // Direct image/video URLs
+  embedType?: 'twitter' | 'image' | 'video';
+  tags?: string[];            // User-friendly tags (e.g., ["Gunfire", "Deaths"])
 }
 
 /**

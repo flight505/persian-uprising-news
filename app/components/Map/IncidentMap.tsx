@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, useMap, LayersControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
+import IncidentSidePanel from './IncidentSidePanel';
 
 const { BaseLayer, Overlay } = LayersControl;
 
@@ -221,6 +222,7 @@ function HeatmapLayer({ incidents, show }: { incidents: Incident[]; show: boolea
 export default function IncidentMap({ incidents, selectedType, onIncidentClick, dateRange, showHeatmap = false }: IncidentMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const mapInitialized = useRef(false);
 
   useEffect(() => {
@@ -282,6 +284,7 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
   }
 
   return (
+    <>
     <MapContainer
       center={IRAN_CENTER}
       zoom={5}
@@ -353,8 +356,9 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
             eventHandlers={{
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
-                // Center map on clicked marker to ensure popup is visible
+                // Center map on clicked marker to ensure side panel content is visible
                 setCenterOn([incident.location.lat, incident.location.lon]);
+                setSelectedIncident(incident);
                 onIncidentClick?.(incident);
               },
             }}
@@ -376,5 +380,12 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
         ))}
       </MarkerClusterGroup>
     </MapContainer>
+
+    {/* Side Panel for incident details */}
+    <IncidentSidePanel
+      incident={selectedIncident}
+      onClose={() => setSelectedIncident(null)}
+    />
+  </>
   );
 }

@@ -51,12 +51,12 @@ export default function TimelineSlider({
     }
   }, [isTimelineActive, currentIndex, uniqueDates, onDateRangeChange]);
 
-  // Auto-play timeline
+  // Auto-play timeline (1.5 seconds per date - matching Iran-main)
   useEffect(() => {
     if (isPlaying && currentIndex < uniqueDates.length - 1) {
       const timer = setTimeout(() => {
         setCurrentIndex(prev => prev + 1);
-      }, 1000);
+      }, 1500);
       return () => clearTimeout(timer);
     } else if (isPlaying && currentIndex >= uniqueDates.length - 1) {
       setIsPlaying(false);

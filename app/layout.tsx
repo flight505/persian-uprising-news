@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { GeistSans } from 'geist/font/sans'
 import './globals.css'
 
@@ -47,6 +48,13 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
+
+        {/* Twitter Widgets for embedded tweets */}
+        <Script
+          src="https://platform.twitter.com/widgets.js"
+          strategy="lazyOnload"
+          id="twitter-widgets"
+        />
       </body>
     </html>
   )

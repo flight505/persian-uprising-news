@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import TimelineSlider from '../components/Map/TimelineSlider';
-import IncidentModal from '../components/Map/IncidentModal';
 
 // Dynamic import for Leaflet to avoid SSR issues
 const IncidentMap = dynamic(
@@ -37,7 +36,6 @@ export default function MapPage() {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | undefined>(undefined);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
   useEffect(() => {
     fetchIncidents();
@@ -230,14 +228,11 @@ export default function MapPage() {
               selectedType={selectedType}
               dateRange={dateRange}
               showHeatmap={showHeatmap}
-              onIncidentClick={(incident) => setSelectedIncident(incident)}
             />
 
             {/* Floating Timeline Slider */}
             {incidents.length > 0 && (
-              <div className={`absolute bottom-6 md:bottom-8 left-0 right-0 z-[1000] px-4 md:px-0 flex justify-center transition-all duration-300 ${
-                selectedIncident ? 'opacity-0 pointer-events-none' : ''
-              }`}>
+              <div className="absolute bottom-6 md:bottom-8 left-0 right-0 z-[1000] px-4 md:px-0 flex justify-center">
                 <TimelineSlider
                   minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
                   maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
@@ -250,12 +245,6 @@ export default function MapPage() {
           </>
         )}
       </div>
-
-      {/* Incident Detail Modal */}
-      <IncidentModal
-        incident={selectedIncident}
-        onClose={() => setSelectedIncident(null)}
-      />
 
       {/* Legend */}
       <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-10">
