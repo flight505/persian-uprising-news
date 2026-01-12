@@ -172,7 +172,7 @@ async function refreshNewsCache(): Promise<number> {
       topics: ('tags' in article ? article.tags : article.topics) || []
     }));
 
-    const normalizedTelegramArticles = telegramArticles.map(article => ({
+    const normalizedTelegramArticles = (telegramArticles as any[]).map(article => ({
       ...article,
       topics: ('tags' in article ? article.tags : article.topics) || []
     }));

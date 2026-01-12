@@ -31,10 +31,26 @@ import { StringSession } from 'telegram/sessions';
 import { NewMessage, NewMessageEvent } from 'telegram/events';
 import { Api } from 'telegram/tl';
 
-// Configuration
-const API_ID = parseInt(process.env.TELEGRAM_API_ID || '0');
-const API_HASH = process.env.TELEGRAM_API_HASH || '';
-const SESSION_STRING = process.env.TELEGRAM_SESSION_STRING || '';
+/**
+ * Get Telegram configuration from environment variables at RUNTIME
+ * NOT at module load time - critical for Vercel serverless functions
+ */
+function getTelegramConfig() {
+  const API_ID = parseInt(process.env.TELEGRAM_API_ID || '0');
+  const API_HASH = process.env.TELEGRAM_API_HASH || '';
+  const SESSION_STRING = process.env.TELEGRAM_SESSION_STRING || '';
+
+  if (!API_ID || !API_HASH || !SESSION_STRING) {
+    console.error('❌ Telegram credentials missing:', {
+      hasApiId: !!API_ID,
+      hasApiHash: !!API_HASH,
+      hasSessionString: !!SESSION_STRING,
+      nodeEnv: process.env.NODE_ENV,
+    });
+  }
+
+  return { API_ID, API_HASH, SESSION_STRING };
+}
 
 // Channels to monitor (public channels, no admin access needed!)
 const MONITORED_CHANNELS = [
@@ -73,8 +89,15 @@ export interface TelegramArticle {
 
 /**
  * Initialize Telegram User client
+ * Reads env vars at runtime for Vercel serverless compatibility
  */
 export async function initTelegramClient(): Promise<TelegramClient> {
+  const { API_ID, API_HASH, SESSION_STRING } = getTelegramConfig();
+
+  if (!API_ID || !API_HASH || !SESSION_STRING) {
+    throw new Error('Telegram User API credentials not configured');
+  }
+
   const client = new TelegramClient(
     new StringSession(SESSION_STRING),
     API_ID,
