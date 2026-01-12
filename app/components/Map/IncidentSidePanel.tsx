@@ -27,9 +27,10 @@ interface Incident {
   }>;
   // Media embedding support
   twitterUrl?: string;
+  telegramUrl?: string;
   alternateUrl?: string;
   mediaUrls?: string[];
-  embedType?: 'twitter' | 'image' | 'video';
+  embedType?: 'twitter' | 'telegram' | 'image' | 'video';
   tags?: string[];
 }
 

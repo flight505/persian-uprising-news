@@ -4,7 +4,9 @@
 
 Real-time PWA for aggregating Persian uprising news from multiple sources (Perplexity, Twitter, Telegram) with interactive incident mapping, translation, and offline support. Built for reliability and humanitarian impact.
 
-**Key Features:** Multi-source aggregation • LSH deduplication • Farsi/English translation • Interactive Leaflet map • Push notifications • Offline-first • Installable PWA
+**Purpose:** This application assists people with friends and family living in Iran, as well as reporters and journalists, by providing a single source for all information and a comprehensive overview of current events.
+
+**Key Features:** Multi-source aggregation • LSH deduplication • Farsi/English translation • Interactive Leaflet map • Telegram video embeds • Twitter embeds • Push notifications • Offline-first • Installable PWA
 
 ## Quick Start
 
