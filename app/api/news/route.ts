@@ -4,6 +4,7 @@ import { getMockTwitterArticles, TwitterArticle } from '@/lib/twitter';
 import { scrapeTwitter, ScrapedArticle as TwitterScrapedArticle } from '@/lib/twitter-scraper';
 import { getMockTelegramArticles, TelegramArticle } from '@/lib/telegram';
 import { scrapeTelegram, ScrapedTelegramArticle } from '@/lib/telegram-scraper';
+import { initTelegramClient, fetchRecentMessages, TelegramArticle as UserAPIArticle } from '@/lib/telegram-user-api';
 import { minHashDeduplicator, computeContentHash, generateMinHashSignature } from '@/lib/minhash';
 import { sendPushNotification } from '@/lib/push-notifications';
 import {
@@ -15,7 +16,7 @@ import {
   Article as FirestoreArticle,
 } from '@/lib/firestore';
 
-type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | TelegramArticle | ScrapedTelegramArticle) & {
+type Article = (PerplexityArticle | TwitterArticle | TwitterScrapedArticle | TelegramArticle | ScrapedTelegramArticle | UserAPIArticle) & {
   id: string;
   contentHash: string;
   minHash: number[];
@@ -128,9 +129,10 @@ async function refreshNewsCache(): Promise<number> {
 
     // Determine which sources to use
     const useRealTwitter = !!process.env.APIFY_API_TOKEN;
-    const useRealTelegram = !!process.env.TELEGRAM_BOT_TOKEN;
+    const useUserAPITelegram = !!(process.env.TELEGRAM_SESSION_STRING && process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH);
+    const useBotAPITelegram = !!process.env.TELEGRAM_BOT_TOKEN;
     const twitterSource = useRealTwitter ? 'Apify' : 'Mock';
-    const telegramSource = useRealTelegram ? 'Bot API' : 'Mock';
+    const telegramSource = useUserAPITelegram ? 'User API' : useBotAPITelegram ? 'Bot API' : 'Mock';
 
     // Fetch from multiple sources in parallel
     console.log(`🔄 Fetching from Perplexity, Twitter (${twitterSource}), and Telegram (${telegramSource})...`);
@@ -142,7 +144,22 @@ async function refreshNewsCache(): Promise<number> {
             return getMockTwitterArticles();
           })
         : getMockTwitterArticles(),
-      useRealTelegram
+      useUserAPITelegram
+        ? (async () => {
+            try {
+              const client = await initTelegramClient();
+              const articles = await fetchRecentMessages(client, 24);
+              await client.disconnect();
+              return articles;
+            } catch (err) {
+              console.error('❌ Telegram User API failed, trying Bot API or mock:', err);
+              if (useBotAPITelegram) {
+                return scrapeTelegram(20).catch(() => getMockTelegramArticles());
+              }
+              return getMockTelegramArticles();
+            }
+          })()
+        : useBotAPITelegram
         ? scrapeTelegram(20).catch(err => {
             console.error('❌ Telegram scraping failed, using mock data:', err);
             return getMockTelegramArticles();
