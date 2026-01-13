@@ -1,4 +1,5 @@
 import webPush from 'web-push';
+import { logger } from './logger';
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
@@ -19,7 +20,10 @@ function ensureVapidConfigured() {
  */
 export async function sendPushNotification(title: string, message: string, url?: string) {
   if (!vapidPublicKey || !vapidPrivateKey) {
-    console.warn('⚠️ VAPID keys not configured, skipping push notification');
+    logger.warn('vapid_keys_not_configured', {
+      skipping_push: true,
+      notification_title: title,
+    });
     return { success: false, sent: 0 };
   }
 
@@ -52,7 +56,10 @@ export async function sendPushNotification(title: string, message: string, url?:
           payload
         ).catch(error => {
           if (error.statusCode === 410) {
-            console.log(`🗑️ Removing expired subscription: ${sub.id}`);
+            logger.info('subscription_expired', {
+              subscription_id: sub.id,
+              status_code: error.statusCode,
+            });
           }
           throw error;
         })
@@ -61,10 +68,21 @@ export async function sendPushNotification(title: string, message: string, url?:
 
     const successful = results.filter(r => r.status === 'fulfilled').length;
 
+    logger.info('push_notifications_sent', {
+      total_subscriptions: subscriptions.length,
+      successful: successful,
+      failed: subscriptions.length - successful,
+      notification_title: title,
+    });
+
     return { success: true, sent: successful };
 
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    logger.error('push_notification_error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      notification_title: title,
+    });
     return { success: false, sent: 0, error };
   }
 }

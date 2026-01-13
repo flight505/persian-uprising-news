@@ -7,6 +7,7 @@
 import algoliasearch, { SearchClient, SearchIndex } from 'algoliasearch';
 import Fuse from 'fuse.js';
 import { Article } from './firestore';
+import { logger } from '@/lib/logger';
 
 // Algolia client (initialized lazily)
 let algoliaClient: SearchClient | null = null;
@@ -28,7 +29,7 @@ export function initAlgolia(): boolean {
   const searchKey = process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_KEY;
 
   if (!appId || !searchKey) {
-    console.warn('⚠️ Algolia credentials missing, falling back to Fuse.js');
+    logger.warn('algolia_credentials_missing');
     currentMode = 'fuse';
     return false;
   }
@@ -37,10 +38,12 @@ export function initAlgolia(): boolean {
     algoliaClient = algoliasearch(appId, searchKey);
     algoliaIndex = algoliaClient.initIndex('articles');
     currentMode = 'algolia';
-    console.log('✅ Algolia initialized successfully');
+    logger.info('algolia_initialized');
     return true;
   } catch (error) {
-    console.error('❌ Failed to initialize Algolia:', error);
+    logger.error('algolia_initialization_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     currentMode = 'fuse';
     return false;
   }
@@ -68,7 +71,7 @@ export function initFuse(articles: Article[]): void {
   if (currentMode === 'disabled') {
     currentMode = 'fuse';
   }
-  console.log(`✅ Fuse.js initialized with ${articles.length} articles`);
+  logger.info('fuse_initialized', { article_count: articles.length });
 }
 
 /**
@@ -109,7 +112,7 @@ export async function indexArticles(articles: Article[]): Promise<void> {
   }));
 
   await adminIndex.saveObjects(algoliaObjects);
-  console.log(`✅ Indexed ${articles.length} articles to Algolia`);
+  logger.info('algolia_articles_indexed', { count: articles.length });
 }
 
 /**
@@ -161,7 +164,7 @@ export async function configureAlgoliaIndex(): Promise<void> {
     maxValuesPerFacet: 100,
   });
 
-  console.log('✅ Algolia index configured');
+  logger.info('algolia_index_configured');
 }
 
 /**

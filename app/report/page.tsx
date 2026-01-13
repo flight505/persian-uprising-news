@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { offlineDB, isOnline, waitForOnline } from '@/lib/offline-db';
+import { logger } from '@/lib/logger';
 
 // Dynamic import for LocationPicker to avoid SSR issues
 const LocationPicker = dynamic(
@@ -138,10 +139,16 @@ export default function ReportPage() {
       }));
 
       setUploadProgress('');
-      console.log(`✅ Uploaded ${uploadedUrls.length} images to Cloudflare`);
+      logger.debug('images_uploaded_successfully', {
+        component: 'ReportPage',
+        imageCount: uploadedUrls.length,
+      });
 
     } catch (error) {
-      console.error('Image upload error:', error);
+      logger.error('image_upload_failed', {
+        component: 'ReportPage',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       setError(error instanceof Error ? error.message : 'Failed to upload images');
     } finally {
       setUploadingImages(false);
@@ -201,7 +208,10 @@ export default function ReportPage() {
         await offlineDB.queueReport(reportData);
         setQueuedOffline(true);
         setSuccess(true);
-        console.log('📝 Report queued for background sync');
+        logger.debug('report_queued_for_sync', {
+          component: 'ReportPage',
+          reportType: formData.type,
+        });
 
         // Redirect to map after 2 seconds
         setTimeout(() => {
@@ -234,7 +244,11 @@ export default function ReportPage() {
       }, 2000);
 
     } catch (err) {
-      console.error('Submission error:', err);
+      logger.error('report_submission_failed', {
+        component: 'ReportPage',
+        error: err instanceof Error ? err.message : 'Unknown error',
+        reportType: formData.type,
+      });
       setError(err instanceof Error ? err.message : 'Failed to submit report');
     } finally {
       setIsSubmitting(false);

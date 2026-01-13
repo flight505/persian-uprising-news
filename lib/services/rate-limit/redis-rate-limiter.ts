@@ -12,6 +12,7 @@
 import { Redis } from '@upstash/redis';
 import { IRateLimiter, RateLimitConfig, RateLimitResult } from './i-rate-limiter';
 import { InMemoryRateLimiter } from './in-memory-rate-limiter';
+import { logger } from '@/lib/logger';
 
 export class RedisRateLimiter implements IRateLimiter {
   private redis: Redis | null = null;
@@ -35,12 +36,20 @@ export class RedisRateLimiter implements IRateLimiter {
     if (url && token) {
       try {
         this.redis = new Redis({ url, token });
-        console.log(`[RedisRateLimiter] Initialized with prefix: ${this.keyPrefix}`);
+        logger.info('redis_rate_limiter_initialized', {
+          key_prefix: this.keyPrefix,
+          fail_mode: this.failMode,
+        });
       } catch (error) {
-        console.error('[RedisRateLimiter] Failed to initialize Redis:', error);
+        logger.error('redis_rate_limiter_init_failed', {
+          error: error instanceof Error ? error.message : String(error),
+          key_prefix: this.keyPrefix,
+        });
       }
     } else {
-      console.warn('[RedisRateLimiter] Redis credentials missing, using in-memory fallback');
+      logger.warn('redis_credentials_missing_using_fallback', {
+        key_prefix: this.keyPrefix,
+      });
     }
   }
 
@@ -101,18 +110,22 @@ export class RedisRateLimiter implements IRateLimiter {
         resetAt: now + this.config.windowMs,
       };
     } catch (error) {
-      console.error(`[RedisRateLimiter] Redis error for ${key}:`, error);
+      logger.error('redis_rate_limit_check_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        key,
+        fail_mode: this.failMode,
+      });
 
       // Handle failure based on fail mode
       if (this.failMode === 'open') {
-        console.warn('[RedisRateLimiter] Fail-open: allowing request');
+        logger.warn('rate_limit_fail_open', { key });
         return {
           allowed: true,
           remaining: this.config.maxRequests,
           resetAt: now + this.config.windowMs,
         };
       } else {
-        console.warn('[RedisRateLimiter] Fail-closed: blocking request');
+        logger.warn('rate_limit_fail_closed', { key });
         return {
           allowed: false,
           remaining: 0,
@@ -129,7 +142,10 @@ export class RedisRateLimiter implements IRateLimiter {
       try {
         await this.redis.del(key);
       } catch (error) {
-        console.error(`[RedisRateLimiter] Failed to reset ${key}:`, error);
+        logger.error('redis_rate_limit_reset_failed', {
+          error: error instanceof Error ? error.message : String(error),
+          key,
+        });
       }
     }
     this.fallback.reset(identifier);

@@ -4,6 +4,8 @@
  * Cost: ~$7/month for regular usage
  */
 
+import { logger } from '@/lib/logger';
+
 export interface TwitterArticle {
   id: string;
   title: string;
@@ -69,12 +71,12 @@ export async function fetchTwitterNews(): Promise<TwitterArticle[]> {
   const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
   if (!APIFY_TOKEN) {
-    console.warn('⚠️ APIFY_API_TOKEN not set. Skipping Twitter scraping.');
+    logger.warn('apify_token_missing');
     return [];
   }
 
   try {
-    console.log('🐦 Fetching tweets from Apify...');
+    logger.info('twitter_fetch_started');
 
     // Build search queries for hashtags
     const searchQueries = TWITTER_HASHTAGS.map(tag => tag).join(' OR ');
@@ -143,7 +145,7 @@ export async function fetchTwitterNews(): Promise<TwitterArticle[]> {
     }
 
     if (tweets.length === 0) {
-      console.warn('⚠️ No tweets returned from Apify');
+      logger.warn('twitter_no_tweets_returned');
       return [];
     }
 
@@ -169,11 +171,13 @@ export async function fetchTwitterNews(): Promise<TwitterArticle[]> {
         };
       });
 
-    console.log(`🐦 Received ${articles.length} tweets from Apify`);
+    logger.info('twitter_fetch_completed', { count: articles.length });
     return articles;
 
   } catch (error) {
-    console.error('Error fetching Twitter data:', error);
+    logger.error('twitter_fetch_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }

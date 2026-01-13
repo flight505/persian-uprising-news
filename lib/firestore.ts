@@ -4,6 +4,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import { logger } from './logger';
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
@@ -15,7 +16,10 @@ if (!admin.apps.length) {
         credential: admin.credential.cert(serviceAccount),
         projectId: serviceAccount.project_id,
       });
-      console.log('✅ Firebase initialized with FIREBASE_SERVICE_ACCOUNT');
+      logger.info('firebase_initialized', {
+        credential_type: 'FIREBASE_SERVICE_ACCOUNT',
+        project_id: serviceAccount.project_id,
+      });
     }
     // Priority 2: GOOGLE_APPLICATION_CREDENTIALS (local development)
     else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
@@ -23,14 +27,23 @@ if (!admin.apps.length) {
         credential: admin.credential.applicationDefault(),
         projectId: process.env.GOOGLE_CLOUD_PROJECT || 'deposits-f29a0',
       });
-      console.log('✅ Firebase initialized with GOOGLE_APPLICATION_CREDENTIALS');
+      logger.info('firebase_initialized', {
+        credential_type: 'GOOGLE_APPLICATION_CREDENTIALS',
+        project_id: process.env.GOOGLE_CLOUD_PROJECT || 'deposits-f29a0',
+      });
     }
     // Priority 3: No credentials (fail gracefully)
     else {
-      console.warn('⚠️ Firebase not initialized - missing credentials (FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS)');
+      logger.warn('firebase_not_initialized', {
+        reason: 'missing_credentials',
+        expected_env_vars: ['FIREBASE_SERVICE_ACCOUNT', 'GOOGLE_APPLICATION_CREDENTIALS'],
+      });
     }
   } catch (error) {
-    console.error('❌ Failed to initialize Firebase:', error);
+    logger.error('firebase_initialization_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 }
 

@@ -4,6 +4,7 @@
  */
 
 import { Incident } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 interface DeduplicationResult {
   isDuplicate: boolean;
@@ -155,7 +156,7 @@ export class IncidentDeduplicator {
     const seen = new Set<string>();
     return incidents.filter(incident => {
       if (seen.has(incident.id)) {
-        console.log(`🔍 Filtered duplicate incident ID: ${incident.id}`);
+        logger.debug('incident_exact_duplicate_filtered', { incident_id: incident.id });
         return false;
       }
       seen.add(incident.id);
@@ -190,7 +191,11 @@ export class IncidentDeduplicator {
             // This is a duplicate, increment count
             groupIncident.duplicateCount++;
             foundGroup = true;
-            console.log(`🔍 Grouped duplicate: ${incident.title} with ${groupIncident.title}`);
+            logger.debug('incident_grouped_as_duplicate', {
+              new_title: incident.title,
+              existing_title: groupIncident.title,
+              distance_km: distance,
+            });
             break;
           }
         }

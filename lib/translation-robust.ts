@@ -9,6 +9,7 @@
  */
 
 import { TranslationServiceClient } from '@google-cloud/translate';
+import { logger } from '@/lib/logger';
 
 export type SupportedLanguage = 'fa' | 'en';
 
@@ -42,7 +43,7 @@ async function translateWithGoogle(
     const hasCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
     if (!hasServiceAccount && !hasCredentialsPath) {
-      console.log('⚠️ Google Cloud credentials not configured, skipping Tier 1');
+      logger.debug('google_credentials_not_configured');
       return null;
     }
 
@@ -81,7 +82,9 @@ async function translateWithGoogle(
 
     return null;
   } catch (error) {
-    console.error('Google Translation failed:', error);
+    logger.error('google_translation_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -124,7 +127,9 @@ async function translateWithMyMemory(
 
     return null;
   } catch (error) {
-    console.error('MyMemory translation failed:', error);
+    logger.error('mymemory_translation_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -170,7 +175,9 @@ async function translateWithLibreTranslate(
 
     return null;
   } catch (error) {
-    console.error('LibreTranslate failed:', error);
+    logger.error('libretranslate_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -276,16 +283,16 @@ export async function translateText(
   const cacheKey = getCacheKey(text, sourceLang, targetLang);
   const cached = translationCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log(`✅ Translation cache hit (${cached.tier})`);
+    logger.debug('translation_cache_hit', { tier: cached.tier });
     return { translatedText: cached.text, tier: cached.tier as any };
   }
 
-  console.log('🔄 Starting multi-tier translation...');
+  logger.debug('translation_multi_tier_started');
 
   // Tier 1: Google Cloud Translation
   const googleResult = await translateWithGoogle(text, sourceLang, targetLang);
   if (googleResult) {
-    console.log('✅ Tier 1 (Google) succeeded');
+    logger.info('translation_tier1_succeeded');
     translationCache.set(cacheKey, {
       text: googleResult.translatedText,
       timestamp: Date.now(),
@@ -297,7 +304,7 @@ export async function translateText(
   // Tier 2: MyMemory
   const myMemoryResult = await translateWithMyMemory(text, sourceLang, targetLang);
   if (myMemoryResult) {
-    console.log('✅ Tier 2 (MyMemory) succeeded');
+    logger.info('translation_tier2_succeeded');
     translationCache.set(cacheKey, {
       text: myMemoryResult.translatedText,
       timestamp: Date.now(),
@@ -309,7 +316,7 @@ export async function translateText(
   // Tier 3: LibreTranslate
   const libreResult = await translateWithLibreTranslate(text, sourceLang, targetLang);
   if (libreResult) {
-    console.log('✅ Tier 3 (LibreTranslate) succeeded');
+    logger.info('translation_tier3_succeeded');
     translationCache.set(cacheKey, {
       text: libreResult.translatedText,
       timestamp: Date.now(),
@@ -319,7 +326,7 @@ export async function translateText(
   }
 
   // Tier 4: Dictionary fallback (always succeeds)
-  console.log('⚠️ All API tiers failed, using dictionary fallback');
+  logger.warn('translation_all_tiers_failed_using_dictionary');
   const dictionaryResult = translateWithDictionary(text, sourceLang, targetLang);
   return dictionaryResult;
 }
@@ -396,7 +403,7 @@ export function cleanCache() {
     }
   }
 
-  console.log(`🧹 Cleaned ${removed} expired cache entries`);
+  logger.debug('translation_cache_cleaned', { removed_count: removed });
 }
 
 // Auto-clean cache every hour

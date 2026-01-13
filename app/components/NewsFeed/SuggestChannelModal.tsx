@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 
 interface SuggestChannelModalProps {
   isOpen: boolean;
@@ -62,7 +63,11 @@ export default function SuggestChannelModal({ isOpen, onClose }: SuggestChannelM
         setSubmitStatus('error');
       }
     } catch (error) {
-      console.error('Error submitting suggestion:', error);
+      logger.error('channel_suggestion_failed', {
+        component: 'SuggestChannelModal',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        channelType: type,
+      });
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);

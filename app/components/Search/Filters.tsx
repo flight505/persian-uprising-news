@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface FilterState {
   source?: string;
@@ -41,7 +42,10 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
         setIsLoading(false);
       })
       .catch(err => {
-        console.error('Failed to load facets:', err);
+        logger.error('facets_load_failed', {
+          component: 'Filters',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
         setIsLoading(false);
       });
   }, []);

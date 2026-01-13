@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 export default function NotificationButton() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -26,7 +27,10 @@ export default function NotificationButton() {
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     } catch (err) {
-      console.error('Error checking subscription:', err);
+      logger.error('subscription_check_failed', {
+        component: 'NotificationButton',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
     }
   };
 
@@ -85,7 +89,9 @@ export default function NotificationButton() {
       }
 
       const data = await response.json();
-      console.log('Subscription successful:', data);
+      logger.debug('notification_subscription_successful', {
+        component: 'NotificationButton',
+      });
 
       setIsSubscribed(true);
 
@@ -97,7 +103,10 @@ export default function NotificationButton() {
       });
 
     } catch (err) {
-      console.error('Error subscribing:', err);
+      logger.error('notification_subscription_failed', {
+        component: 'NotificationButton',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
       setError(err instanceof Error ? err.message : 'Failed to subscribe');
     } finally {
       setIsLoading(false);
@@ -129,7 +138,10 @@ export default function NotificationButton() {
       setIsSubscribed(false);
 
     } catch (err) {
-      console.error('Error unsubscribing:', err);
+      logger.error('notification_unsubscribe_failed', {
+        component: 'NotificationButton',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
       setError(err instanceof Error ? err.message : 'Failed to unsubscribe');
     } finally {
       setIsLoading(false);

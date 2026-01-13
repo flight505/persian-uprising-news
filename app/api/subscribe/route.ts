@@ -7,6 +7,7 @@ import {
   findSubscription,
   type SubscriptionData
 } from '@/lib/subscriptions';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/subscribe
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     // Validate VAPID public key
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
-      console.error('VAPID public key not configured');
+      logger.error('vapid_key_missing');
       return NextResponse.json(
         { error: 'Push notifications not configured' },
         { status: 500 }
@@ -44,7 +45,9 @@ export async function POST(request: NextRequest) {
     // Check if already subscribed
     const existing = await findSubscription(endpointHash);
     if (existing) {
-      console.log(`✅ Subscription already exists: ${endpointHash}`);
+      logger.info('subscription_already_exists', {
+        subscriptionId: endpointHash,
+      });
       return NextResponse.json({
         success: true,
         message: 'Already subscribed',
@@ -64,8 +67,10 @@ export async function POST(request: NextRequest) {
     await addSubscription(newSubscription);
 
     const totalSubs = (await getActiveSubscriptions()).length;
-    console.log(`📬 New push subscription: ${endpointHash}`);
-    console.log(`📊 Total subscriptions: ${totalSubs}`);
+    logger.info('subscription_created', {
+      subscriptionId: endpointHash,
+      totalSubscriptions: totalSubs,
+    });
 
     return NextResponse.json({
       success: true,
@@ -74,7 +79,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in /api/subscribe POST:', error);
+    logger.error('subscription_create_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to subscribe', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -111,8 +119,10 @@ export async function DELETE(request: NextRequest) {
 
     if (existing) {
       const totalSubs = (await getActiveSubscriptions()).length;
-      console.log(`🗑️ Removed subscription: ${endpointHash}`);
-      console.log(`📊 Total subscriptions: ${totalSubs}`);
+      logger.info('subscription_removed', {
+        subscriptionId: endpointHash,
+        totalSubscriptions: totalSubs,
+      });
 
       return NextResponse.json({
         success: true,
@@ -126,7 +136,10 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Error in /api/subscribe DELETE:', error);
+    logger.error('subscription_delete_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to unsubscribe', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

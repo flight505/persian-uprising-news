@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/cron/scrape
@@ -15,15 +16,15 @@ export async function GET(request: NextRequest) {
     const cronSecret = process.env.CRON_SECRET;
 
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      console.error('❌ Unauthorized cron request');
+      logger.error('cron_scrape_unauthorized');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const startTime = Date.now();
-    console.log('⏰ Cron job triggered: Starting automated news scraping');
+    const endTimer = logger.time('cron_scrape');
+    logger.info('cron_scrape_started');
 
     // Trigger the news refresh endpoint (which handles all scraping and deduplication)
     const baseUrl = process.env.VERCEL_URL
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     if (!refreshResponse.ok) {
       const error = await refreshResponse.text();
-      console.error('❌ News refresh failed:', error);
+      logger.error('cron_scrape_refresh_failed', { error });
       return NextResponse.json(
         { error: 'Failed to refresh news', details: error },
         { status: 500 }
@@ -47,21 +48,24 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await refreshResponse.json();
-    const duration = Date.now() - startTime;
+    endTimer();
 
-    console.log(`✅ Cron job completed in ${duration}ms`);
-    console.log(`📊 Articles in cache: ${result.articlesCount}`);
+    logger.info('cron_scrape_completed', {
+      articlesCount: result.articlesCount,
+    });
 
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      duration: `${duration}ms`,
       articlesCount: result.articlesCount,
       lastUpdated: result.lastUpdated,
     });
 
   } catch (error) {
-    console.error('❌ Error in cron job:', error);
+    logger.error('cron_scrape_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Cron job failed',

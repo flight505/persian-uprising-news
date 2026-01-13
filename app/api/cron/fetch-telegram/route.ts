@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ServiceContainer } from '@/lib/services/container';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // Vercel Pro: 60 second max
@@ -25,8 +26,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('🔄 Cron: Starting Telegram fetch...');
     const startTime = Date.now();
+
+    logger.info('cron_fetch_telegram_started');
 
     // Get news service and refresh
     const newsService = ServiceContainer.getNewsService();
@@ -34,17 +36,17 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime;
 
-    console.log(`✅ Cron: Completed in ${duration}ms`);
-    console.log(`📊 Results:`, {
+    logger.info('cron_fetch_telegram_completed', {
       articlesAdded: result.articlesAdded,
       articlesTotal: result.articlesTotal,
       incidentsExtracted: result.incidentsExtracted,
+      duration_ms: duration,
     });
 
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      duration,
+      duration_ms: duration,
       results: {
         articlesAdded: result.articlesAdded,
         articlesTotal: result.articlesTotal,
@@ -53,7 +55,10 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Cron: Telegram fetch failed:', error);
+    logger.error('cron_fetch_telegram_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     return NextResponse.json(
       {

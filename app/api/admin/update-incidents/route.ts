@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { updateIncident, getIncidents, isFirestoreAvailable } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 // Real, CURRENT Twitter URLs (January 2026)
 // Twitter: x.com (not twitter.com) as per current branding
@@ -115,13 +116,20 @@ export async function POST(request: NextRequest) {
         await updateIncident(incident.id, updateData);
 
         results.updated.push(`${incident.title} (ID: ${incident.id})`);
-        console.log(`✅ Updated incident: ${incident.title}`);
+        logger.info('incident_updated', {
+          incidentId: incident.id,
+          title: incident.title,
+        });
       } catch (error) {
         results.errors.push({
           title: update.title,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
-        console.error(`❌ Failed to update: ${update.title}`, error);
+        logger.error('incident_update_failed', {
+          title: update.title,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
       }
     }
 
@@ -131,7 +139,10 @@ export async function POST(request: NextRequest) {
       results,
     });
   } catch (error) {
-    console.error('Error updating incidents:', error);
+    logger.error('admin_update_incidents_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         success: false,

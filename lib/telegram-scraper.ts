@@ -3,6 +3,8 @@
  * Monitors public channels for Persian uprising news
  */
 
+import { logger } from '@/lib/logger';
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 // Public Telegram channels to monitor (add bot as admin to these channels)
@@ -78,22 +80,22 @@ let lastUpdateId = 0;
  */
 export async function scrapeTelegram(limit: number = 20): Promise<ScrapedTelegramArticle[]> {
   if (!TELEGRAM_BOT_TOKEN) {
-    console.error('❌ TELEGRAM_BOT_TOKEN not configured');
+    logger.error('telegram_bot_token_not_configured');
     return [];
   }
 
   try {
-    console.log('📱 Starting Telegram scrape...');
+    logger.info('telegram_scrape_started');
 
     // Get updates from Telegram Bot API
     const updates = await getUpdates();
 
     if (updates.length === 0) {
-      console.log('📱 No new Telegram updates');
+      logger.info('telegram_no_new_updates');
       return [];
     }
 
-    console.log(`📱 Received ${updates.length} Telegram updates`);
+    logger.info('telegram_updates_received', { count: updates.length });
 
     // Transform messages to articles
     const articles: ScrapedTelegramArticle[] = [];
@@ -118,11 +120,13 @@ export async function scrapeTelegram(limit: number = 20): Promise<ScrapedTelegra
       }
     }
 
-    console.log(`✅ Scraped ${articles.length} articles from Telegram`);
+    logger.info('telegram_scrape_completed', { count: articles.length });
     return articles.slice(0, limit);
 
   } catch (error) {
-    console.error('❌ Error scraping Telegram:', error);
+    logger.error('telegram_scrape_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }
@@ -144,21 +148,23 @@ async function getUpdates(): Promise<TelegramUpdate[]> {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('❌ Telegram API error:', error);
+      logger.error('telegram_api_error', { error });
       return [];
     }
 
     const data = await response.json();
 
     if (!data.ok) {
-      console.error('❌ Telegram API returned error:', data.description);
+      logger.error('telegram_api_returned_error', { description: data.description });
       return [];
     }
 
     return data.result as TelegramUpdate[];
 
   } catch (error) {
-    console.error('❌ Error fetching Telegram updates:', error);
+    logger.error('telegram_updates_fetch_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }
@@ -236,7 +242,9 @@ async function transformMessageToArticle(
     };
 
   } catch (error) {
-    console.error('❌ Error transforming Telegram message:', error);
+    logger.error('telegram_message_transform_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -260,7 +268,9 @@ async function getFileUrl(fileId: string): Promise<string | undefined> {
     return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${filePath}`;
 
   } catch (error) {
-    console.error('❌ Error getting file URL:', error);
+    logger.error('telegram_file_url_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return undefined;
   }
 }

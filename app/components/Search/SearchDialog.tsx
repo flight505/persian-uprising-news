@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Article } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 interface SearchDialogProps {
   isOpen: boolean;
@@ -67,7 +68,11 @@ export default function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
         setResults(data);
         setSelectedIndex(0);
       } catch (error) {
-        console.error('Search error:', error);
+        logger.error('search_failed', {
+          component: 'SearchDialog',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          query,
+        });
       } finally {
         setIsSearching(false);
       }

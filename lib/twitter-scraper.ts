@@ -3,6 +3,8 @@
  * Scrapes tweets from hashtags related to Persian uprising
  */
 
+import { logger } from '@/lib/logger';
+
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_ACTOR_ID = 'apidojo~tweet-scraper';
 
@@ -75,7 +77,7 @@ export async function scrapeTwitter(
   hoursBack: number = 1
 ): Promise<ScrapedArticle[]> {
   if (!APIFY_API_TOKEN) {
-    console.error('❌ APIFY_API_TOKEN not configured');
+    logger.error('apify_token_not_configured');
     return [];
   }
 
@@ -84,8 +86,10 @@ export async function scrapeTwitter(
     // Apify works better with individual searches than OR queries
     const searchTerms = PERSIAN_UPRISING_HASHTAGS.slice(0, 3); // Start with first 3 hashtags
 
-    console.log(`🐦 Starting Twitter scrape for hashtags: ${searchTerms.join(', ')}`);
-    console.log(`📊 Will scrape up to ${maxTweetsPerHashtag} tweets per hashtag`);
+    logger.info('twitter_scrape_started', {
+      hashtags: searchTerms.join(', '),
+      max_per_hashtag: maxTweetsPerHashtag
+    });
 
     // Start Apify actor run
     const runResponse = await fetch(
@@ -103,14 +107,14 @@ export async function scrapeTwitter(
 
     if (!runResponse.ok) {
       const error = await runResponse.text();
-      console.error('❌ Failed to start Apify run:', error);
+      logger.error('apify_run_start_failed', { error });
       return [];
     }
 
     const runData = await runResponse.json();
     const runId = runData.data.id;
 
-    console.log(`⏳ Apify run started: ${runId}, waiting for completion...`);
+    logger.info('apify_run_started', { run_id: runId });
 
     // Wait for run to complete
     const tweets = await waitForApifyRun(runId);
@@ -120,11 +124,16 @@ export async function scrapeTwitter(
       .map(transformTweetToArticle)
       .filter((article): article is ScrapedArticle => article !== null);
 
-    console.log(`✅ Scraped ${articles.length} tweets from Twitter (${tweets.length - articles.length} failed transformation)`);
+    logger.info('twitter_scrape_completed', {
+      total: articles.length,
+      failed: tweets.length - articles.length
+    });
     return articles;
 
   } catch (error) {
-    console.error('❌ Error scraping Twitter:', error);
+    logger.error('twitter_scrape_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }
@@ -146,7 +155,11 @@ async function waitForApifyRun(runId: string): Promise<ApifyTweet[]> {
     const statusData = await statusResponse.json();
     const status = statusData.data.status;
 
-    console.log(`⏳ Apify run status: ${status} (attempt ${attempt + 1}/${maxAttempts})`);
+    logger.debug('apify_run_status', {
+      status,
+      attempt: attempt + 1,
+      max_attempts: maxAttempts
+    });
 
     if (status === 'SUCCEEDED') {
       // Fetch dataset results
@@ -156,23 +169,25 @@ async function waitForApifyRun(runId: string): Promise<ApifyTweet[]> {
       );
 
       const tweets = await datasetResponse.json();
-      console.log(`📦 Received ${tweets.length} raw tweets from Apify`);
+      logger.info('apify_tweets_received', { count: tweets.length });
 
       // Debug: log first tweet structure
       if (tweets.length > 0) {
-        console.log('🔍 Sample tweet structure:', JSON.stringify(tweets[0], null, 2).substring(0, 500));
+        logger.debug('sample_tweet_structure', {
+          sample: JSON.stringify(tweets[0], null, 2).substring(0, 500)
+        });
       }
 
       return tweets as ApifyTweet[];
     }
 
     if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-      console.error(`❌ Apify run ${status}`);
+      logger.error('apify_run_failed', { status });
       return [];
     }
   }
 
-  console.error('❌ Apify run timeout');
+  logger.error('apify_run_timeout');
   return [];
 }
 
@@ -183,7 +198,7 @@ function transformTweetToArticle(tweet: any): ScrapedArticle | null {
   try {
     // Validate required fields
     if (!tweet.id || !tweet.full_text) {
-      console.warn('⚠️ Skipping tweet with missing required fields:', tweet.id);
+      logger.warn('tweet_missing_fields', { tweet_id: tweet.id });
       return null;
     }
 
@@ -235,7 +250,9 @@ function transformTweetToArticle(tweet: any): ScrapedArticle | null {
       },
     };
   } catch (error) {
-    console.error('❌ Error transforming tweet:', error);
+    logger.error('tweet_transform_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }

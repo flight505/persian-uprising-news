@@ -42,6 +42,9 @@
 
 **Key Features:** Multi-source aggregation • LSH deduplication • Farsi/English translation • Interactive Leaflet map • Telegram video embeds • Twitter embeds • Push notifications • Offline-first • Installable PWA
 
+**Logging:** use the structured logging utility Instead of the console statements, Read and analyze logs, and use Utility to identify bugs and update as needed.  
+
+
 ## Quick Start
 
 ```bash

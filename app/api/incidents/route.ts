@@ -13,6 +13,7 @@ import {
   formatZodErrors,
   type CreateIncidentInput,
 } from '@/lib/validators/incident-validator';
+import { logger } from '@/lib/logger';
 
 export interface Incident {
   id: string;
@@ -89,7 +90,10 @@ export async function GET(request: NextRequest) {
       total: incidents.length,
     });
   } catch (error) {
-    console.error('Error in /api/incidents GET:', error);
+    logger.error('incidents_get_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json({
       incidents: [],
       total: 0,
@@ -174,7 +178,12 @@ export async function POST(request: NextRequest) {
     const incidentService = ServiceContainer.getIncidentService();
     const incidentId = await incidentService.create(newIncident);
 
-    console.log(`[Incidents] New incident: ${newIncident.type} - "${newIncident.title}" (ID: ${incidentId})`);
+    logger.info('incident_created', {
+      incidentId,
+      type: newIncident.type,
+      title: newIncident.title,
+      location: newIncident.location,
+    });
 
     const headers = createRateLimitHeaders(rateLimitResult, config);
     return NextResponse.json(
@@ -189,7 +198,10 @@ export async function POST(request: NextRequest) {
       { status: 201, headers }
     );
   } catch (error) {
-    console.error('Error in /api/incidents POST:', error);
+    logger.error('incident_create_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     return NextResponse.json(
       {

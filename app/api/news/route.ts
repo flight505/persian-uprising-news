@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServiceContainer } from '@/lib/services/container';
 import { getArticles as getFirestoreArticles, isFirestoreAvailable } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 let lastFetch = 0;
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -14,6 +15,8 @@ const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
  * - topic: filter by topic ID (optional)
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '0');
@@ -22,15 +25,22 @@ export async function GET(request: NextRequest) {
 
     const now = Date.now();
     if (now - lastFetch > CACHE_DURATION) {
-      console.log('🔄 Triggering background news refresh...');
+      logger.info('background_refresh_triggered', {
+        cache_expired: true,
+        last_fetch_ago: now - lastFetch,
+      });
+
       const newsService = ServiceContainer.getNewsService();
       newsService.refresh()
         .then(() => {
           lastFetch = now;
-          console.log('✅ Background news refresh completed');
+          logger.info('background_refresh_completed');
         })
         .catch(err => {
-          console.error('⚠️ Background news refresh failed (non-blocking):', err);
+          logger.warn('background_refresh_failed', {
+            error: err.message,
+            non_blocking: true,
+          });
         });
     }
 
@@ -46,15 +56,31 @@ export async function GET(request: NextRequest) {
         articles = await getFirestoreArticles(limit * (page + 1));
       }
     } else {
-      console.warn('⚠️ Firestore not available, returning empty array');
+      logger.warn('firestore_unavailable', {
+        returning_empty: true,
+      });
     }
 
     const start = topicFilter ? page * limit : 0;
     const end = topicFilter ? start + limit : articles.length;
     const paginatedArticles = articles.slice(start, end);
 
+    // Map sourceUrl to url for client compatibility
+    const articlesWithUrl = paginatedArticles.map(article => ({
+      ...article,
+      url: article.sourceUrl || article.url || '',
+    }));
+
+    const duration = Date.now() - startTime;
+    logger.http('GET', '/api/news', 200, duration, {
+      page,
+      limit,
+      topic: topicFilter,
+      articles_returned: articlesWithUrl.length,
+    });
+
     return NextResponse.json({
-      articles: paginatedArticles,
+      articles: articlesWithUrl,
       pagination: {
         page,
         limit,
@@ -64,7 +90,15 @@ export async function GET(request: NextRequest) {
       lastUpdated: lastFetch,
     });
   } catch (error) {
-    console.error('Error in /api/news:', error);
+    const duration = Date.now() - startTime;
+
+    logger.error('api_news_error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration_ms: duration,
+    });
+
+    logger.http('GET', '/api/news', 500, duration);
 
     return NextResponse.json({
       articles: [],
@@ -86,11 +120,19 @@ export async function GET(request: NextRequest) {
  * Manually trigger a news refresh
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
-    console.log('🔄 Manual refresh triggered');
+    logger.info('manual_refresh_triggered');
     const newsService = ServiceContainer.getNewsService();
     const result = await newsService.refresh();
     lastFetch = Date.now();
+
+    const duration = Date.now() - startTime;
+    logger.http('POST', '/api/news/refresh', 200, duration, {
+      articles_added: result.articlesAdded,
+      articles_total: result.articlesTotal,
+    });
 
     return NextResponse.json({
       success: true,
@@ -98,7 +140,16 @@ export async function POST(request: NextRequest) {
       lastUpdated: lastFetch,
     });
   } catch (error) {
-    console.error('Error refreshing news:', error);
+    const duration = Date.now() - startTime;
+
+    logger.error('manual_refresh_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration_ms: duration,
+    });
+
+    logger.http('POST', '/api/news/refresh', 500, duration);
+
     return NextResponse.json(
       {
         error: 'Failed to refresh news',

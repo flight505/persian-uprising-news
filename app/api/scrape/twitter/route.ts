@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scrapeTwitter, estimateCost } from '@/lib/twitter-scraper';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/scrape/twitter
@@ -48,8 +49,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`🐦 Starting Twitter scrape: maxTweets=${maxTweets}, hoursBack=${hoursBack}`);
-    console.log(`💰 Estimated cost: $${estimatedCost.toFixed(4)}`);
+    logger.info('twitter_scrape_started', {
+      maxTweets,
+      hoursBack,
+      estimatedCost: estimatedCost.toFixed(4),
+    });
 
     // Scrape Twitter
     const articles = await scrapeTwitter(maxTweets, hoursBack);
@@ -79,7 +83,10 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in /api/scrape/twitter:', error);
+    logger.error('twitter_scrape_get_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Failed to scrape Twitter',
@@ -113,8 +120,11 @@ export async function POST(request: NextRequest) {
     }
 
     const estimatedCost = estimateCost(maxTweets);
-    console.log(`🐦 Twitter scrape triggered: maxTweets=${maxTweets}, hoursBack=${hoursBack}`);
-    console.log(`💰 Estimated cost: $${estimatedCost.toFixed(4)}`);
+    logger.info('twitter_scrape_post_started', {
+      maxTweets,
+      hoursBack,
+      estimatedCost: estimatedCost.toFixed(4),
+    });
 
     // Scrape Twitter
     const articles = await scrapeTwitter(maxTweets, hoursBack);
@@ -130,7 +140,10 @@ export async function POST(request: NextRequest) {
 
     // TODO: Save to DynamoDB when AWS infrastructure is set up
     if (saveToDb) {
-      console.log(`💾 Would save ${articles.length} articles to DynamoDB (not implemented yet)`);
+      logger.info('twitter_articles_save_skipped', {
+        articleCount: articles.length,
+        reason: 'DynamoDB not implemented yet',
+      });
     }
 
     return NextResponse.json({
@@ -143,7 +156,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in /api/scrape/twitter:', error);
+    logger.error('twitter_scrape_post_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Failed to scrape Twitter',

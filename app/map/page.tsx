@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import TimelineSlider from '../components/Map/TimelineSlider';
+import { logger } from '@/lib/logger';
 
 // Dynamic import for Leaflet to avoid SSR issues
 const IncidentMap = dynamic(
@@ -27,6 +28,11 @@ interface Incident {
   timestamp: number;
   upvotes: number;
   createdAt: number;
+  relatedArticles?: Array<{
+    title: string;
+    url: string;
+    source: string;
+  }>;
 }
 
 export default function MapPage() {
@@ -51,7 +57,10 @@ export default function MapPage() {
       setIncidents(data.incidents || []);
       setError(null);
     } catch (err) {
-      console.error('Error fetching incidents:', err);
+      logger.error('incidents_fetch_failed', {
+        component: 'MapPage',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
       setError('Failed to load incidents. Please try again later.');
     } finally {
       setIsLoading(false);

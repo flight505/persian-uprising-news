@@ -5,6 +5,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import { logger } from '@/lib/logger';
 
 export interface BatchResult {
   success: number;
@@ -44,7 +45,10 @@ export class FirestoreBatchWriter {
 
     // Split into batches of 500
     const batches = this.splitIntoBatches(documents);
-    console.log(`📦 Writing ${documents.length} documents in ${batches.length} batch(es)`);
+    logger.info('firestore_batch_write_started', {
+      document_count: documents.length,
+      batch_count: batches.length
+    });
 
     for (let i = 0; i < batches.length; i++) {
       const batchDocs = batches[i];
@@ -67,7 +71,11 @@ export class FirestoreBatchWriter {
       try {
         await batch.commit();
         results.success += batchDocs.length;
-        console.log(`✅ Batch ${i + 1}/${batches.length}: Wrote ${batchDocs.length} documents`);
+        logger.info('firestore_batch_committed', {
+          batch_number: i + 1,
+          total_batches: batches.length,
+          document_count: batchDocs.length
+        });
       } catch (error) {
         results.failed += batchDocs.length;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -75,7 +83,11 @@ export class FirestoreBatchWriter {
           batch: batchDocs.map(d => d.id || 'auto-generated'),
           error: errorMessage,
         });
-        console.error(`❌ Batch ${i + 1}/${batches.length} failed:`, errorMessage);
+        logger.error('firestore_batch_failed', {
+          batch_number: i + 1,
+          total_batches: batches.length,
+          error: errorMessage
+        });
       }
     }
 

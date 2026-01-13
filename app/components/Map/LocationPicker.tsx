@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { logger } from '@/lib/logger';
 
 // Fix for default marker icons in Next.js
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -57,7 +58,12 @@ export default function LocationPicker({ initialPosition, onLocationSelect }: Lo
       const address = data.display_name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
       onLocationSelect(lat, lon, address);
     } catch (error) {
-      console.error('Geocoding error:', error);
+      logger.error('geocoding_failed', {
+        component: 'LocationPicker',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        lat,
+        lon,
+      });
       onLocationSelect(lat, lon, `${lat.toFixed(4)}, ${lon.toFixed(4)}`);
     } finally {
       setIsGeocoding(false);

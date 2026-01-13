@@ -30,6 +30,7 @@ import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { NewMessage, NewMessageEvent } from 'telegram/events';
 import { Api } from 'telegram/tl';
+import { logger } from './logger';
 
 /**
  * Get Telegram configuration from environment variables at RUNTIME
@@ -41,11 +42,11 @@ function getTelegramConfig() {
   const SESSION_STRING = process.env.TELEGRAM_SESSION_STRING || '';
 
   if (!API_ID || !API_HASH || !SESSION_STRING) {
-    console.error('❌ Telegram credentials missing:', {
-      hasApiId: !!API_ID,
-      hasApiHash: !!API_HASH,
-      hasSessionString: !!SESSION_STRING,
-      nodeEnv: process.env.NODE_ENV,
+    logger.error('telegram_credentials_missing', {
+      has_api_id: !!API_ID,
+      has_api_hash: !!API_HASH,
+      has_session_string: !!SESSION_STRING,
+      node_env: process.env.NODE_ENV,
     });
   }
 
@@ -134,10 +135,14 @@ export async function initTelegramClient(): Promise<TelegramClient> {
     phoneCode: async () => {
       throw new Error('Phone code required for first-time authentication');
     },
-    onError: (err) => console.error('Telegram auth error:', err),
+    onError: (err) => logger.error('telegram_auth_error', {
+      error: err instanceof Error ? err.message : String(err),
+    }),
   });
 
-  console.log('✅ Connected to Telegram User API');
+  logger.info('telegram_connected', {
+    client_type: 'user_api',
+  });
   return client;
 }
 
@@ -180,9 +185,16 @@ export async function fetchRecentMessages(
         }
       }
 
-      console.log(`✅ Fetched ${articles.length} messages from ${channelUsername}`);
+      logger.info('telegram_messages_fetched', {
+        channel: channelUsername,
+        messages_count: articles.length,
+      });
     } catch (error) {
-      console.error(`❌ Error fetching from ${channelUsername}:`, error);
+      logger.error('telegram_fetch_failed', {
+        channel: channelUsername,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
 
@@ -270,12 +282,18 @@ export async function startRealtimeListener(
     // Convert to article and callback
     const article = await messageToArticle(message, channel, channelUsername);
     if (article) {
-      console.log(`📢 New article from ${channelUsername}: ${article.title}`);
+      logger.info('telegram_new_article', {
+        channel: channelUsername,
+        title: article.title.substring(0, 100),
+        article_id: article.id,
+      });
       onNewArticle(article);
     }
   }, new NewMessage({}));
 
-  console.log('👂 Listening for new messages in monitored channels...');
+  logger.info('telegram_listener_started', {
+    monitored_channels: MONITORED_CHANNELS.length,
+  });
 }
 
 /**

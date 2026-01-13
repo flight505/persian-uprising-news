@@ -1,5 +1,6 @@
 import { INewsSource, Article } from './i-news-source';
 import { fetchPerplexityNews, PerplexityArticle } from '@/lib/perplexity';
+import { logger } from '@/lib/logger';
 
 export class PerplexityNewsSource implements INewsSource {
   readonly name = 'perplexity';
@@ -15,7 +16,10 @@ export class PerplexityNewsSource implements INewsSource {
       const result = await fetchPerplexityNews();
       return this.normalize(result);
     } catch (error) {
-      console.error(`[${this.name}] Fetch failed:`, error);
+      logger.error('perplexity_fetch_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return [];
     }
   }

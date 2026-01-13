@@ -4,6 +4,7 @@
  */
 
 import { Redis } from '@upstash/redis';
+import { logger } from '@/lib/logger';
 
 // Initialize Redis client (lazy)
 let redis: Redis | null = null;
@@ -15,7 +16,7 @@ function getRedis(): Redis | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
-    console.warn('⚠️ Upstash Redis credentials missing, caching disabled');
+    logger.warn('redis_credentials_missing');
     return null;
   }
 
@@ -24,10 +25,12 @@ function getRedis(): Redis | null {
       url,
       token,
     });
-    console.log('✅ Redis client initialized');
+    logger.info('redis_client_initialized');
     return redis;
   } catch (error) {
-    console.error('❌ Failed to initialize Redis:', error);
+    logger.error('redis_initialization_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -53,11 +56,14 @@ export async function getCache<T>(key: string): Promise<T | null> {
   try {
     const value = await client.get<T>(key);
     if (value) {
-      console.log(`✅ Cache hit: ${key}`);
+      logger.debug('cache_hit', { key });
     }
     return value;
   } catch (error) {
-    console.error(`❌ Cache read error for key ${key}:`, error);
+    logger.error('cache_read_error', {
+      key,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -71,10 +77,13 @@ export async function setCache<T>(key: string, value: T, ttl: number): Promise<b
 
   try {
     await client.setex(key, ttl, JSON.stringify(value));
-    console.log(`✅ Cache set: ${key} (TTL: ${ttl}s)`);
+    logger.debug('cache_set', { key, ttl });
     return true;
   } catch (error) {
-    console.error(`❌ Cache write error for key ${key}:`, error);
+    logger.error('cache_write_error', {
+      key,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return false;
   }
 }
@@ -88,10 +97,13 @@ export async function deleteCache(key: string): Promise<boolean> {
 
   try {
     await client.del(key);
-    console.log(`✅ Cache deleted: ${key}`);
+    logger.debug('cache_deleted', { key });
     return true;
   } catch (error) {
-    console.error(`❌ Cache delete error for key ${key}:`, error);
+    logger.error('cache_delete_error', {
+      key,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return false;
   }
 }
@@ -104,12 +116,13 @@ export async function deleteCachePattern(pattern: string): Promise<number> {
   if (!client) return 0;
 
   try {
-    // Upstash Redis doesn't support SCAN, so we need to maintain a set of keys
-    // For now, we'll just delete individual keys as needed
-    console.warn('⚠️ Pattern deletion not supported in Upstash Redis');
+    logger.warn('cache_pattern_deletion_not_supported', { pattern });
     return 0;
   } catch (error) {
-    console.error(`❌ Cache pattern delete error for ${pattern}:`, error);
+    logger.error('cache_pattern_delete_error', {
+      pattern,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return 0;
   }
 }
@@ -141,7 +154,9 @@ export async function getCacheStats(): Promise<{
       available: true,
     };
   } catch (error) {
-    console.error('❌ Error fetching cache stats:', error);
+    logger.error('cache_stats_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return { available: false };
   }
 }
@@ -260,8 +275,10 @@ export async function invalidateArticleCache(): Promise<void> {
     for (let i = 0; i < 10; i++) {
       await deleteCache(`articles:page:${i}`);
     }
-    console.log('✅ Article cache invalidated');
+    logger.info('article_cache_invalidated');
   } catch (error) {
-    console.error('❌ Error invalidating article cache:', error);
+    logger.error('article_cache_invalidation_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }

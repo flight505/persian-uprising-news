@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImageToCloudflare } from '@/lib/cloudflare-images';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/upload
@@ -54,7 +55,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in /api/upload:', error);
+    logger.error('image_upload_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to upload image', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

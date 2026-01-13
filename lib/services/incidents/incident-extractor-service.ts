@@ -5,6 +5,7 @@ import { geocodeLocations } from '@/lib/geocoder';
 import { isFirestoreAvailable, getDb } from '@/lib/firestore';
 import { FirestoreBatchWriter } from '@/lib/firestore-batch';
 import { perfMonitor } from '@/lib/performance/monitor';
+import { logger } from '@/lib/logger';
 
 export class IncidentExtractorService implements IIncidentExtractor {
   async extractFromArticles(articles: ArticleWithHash[]): Promise<ExtractedIncident[]> {
@@ -13,12 +14,12 @@ export class IncidentExtractorService implements IIncidentExtractor {
     }
 
     if (!isFirestoreAvailable()) {
-      console.warn('⚠️ Firestore not available, skipping incident extraction');
+      logger.warn('firestore_unavailable_extraction_skipped', { articles_count: articles.length });
       return [];
     }
 
     try {
-      console.log(`🔍 Auto-extracting incidents from ${articles.length} articles...`);
+      logger.info('incident_extraction_started', { articles_count: articles.length });
 
       const articlesForExtraction = articles.map(a => ({
         id: a.id,
@@ -34,17 +35,17 @@ export class IncidentExtractorService implements IIncidentExtractor {
       const extractedIncidents = extractIncidentsFromArticles(articlesForExtraction);
 
       if (extractedIncidents.length === 0) {
-        console.log('ℹ️  No incidents extracted from articles');
+        logger.info('no_incidents_extracted', { articles_count: articles.length });
         return [];
       }
 
       const uniqueLocations = [...new Set(extractedIncidents.map(i => i.location))];
-      console.log(`🗺️ Geocoding ${uniqueLocations.length} unique locations...`);
+      logger.info('geocoding_started', { unique_locations_count: uniqueLocations.length });
 
       const geocodedLocations = await perfMonitor.measure('Geocoding', () =>
         geocodeLocations(uniqueLocations)
       );
-      console.log(`✅ Geocoded ${geocodedLocations.size} locations`);
+      logger.info('geocoding_completed', { geocoded_count: geocodedLocations.size });
 
       // PERFORMANCE OPTIMIZATION: Use batch writes instead of N sequential writes
       const incidentsToSave = extractedIncidents
@@ -52,12 +53,15 @@ export class IncidentExtractorService implements IIncidentExtractor {
           const geocoded = geocodedLocations.get(extracted.location);
 
           if (!geocoded) {
-            console.log(`⚠️ Failed to geocode: ${extracted.location}`);
+            logger.warn('geocoding_failed', { location: extracted.location });
             return null;
           }
 
           if (extracted.confidence < 40) {
-            console.log(`⚠️ Skipping low-confidence incident (${extracted.confidence}): ${extracted.title}`);
+            logger.debug('low_confidence_incident_skipped', {
+              confidence: extracted.confidence,
+              title: extracted.title,
+            });
             return null;
           }
 
@@ -94,17 +98,29 @@ export class IncidentExtractorService implements IIncidentExtractor {
           batchWriter.writeBatch('incidents', incidentsToSave)
         );
 
-        console.log(`💾 Batch saved ${result.success} incidents, ${result.failed} failed`);
+        logger.info('incidents_batch_saved', {
+          success_count: result.success,
+          failed_count: result.failed,
+        });
 
         if (result.errors.length > 0) {
-          console.error('Batch write errors:', result.errors);
+          logger.error('incidents_batch_write_errors', {
+            error_count: result.errors.length,
+            errors: result.errors,
+          });
         }
       } else {
-        console.log('ℹ️  No incidents passed confidence threshold');
+        logger.info('no_incidents_passed_confidence_threshold', {
+          extracted_count: extractedIncidents.length,
+        });
       }
       return extractedIncidents;
     } catch (error) {
-      console.error('Error in incident extraction:', error);
+      logger.error('incident_extraction_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        articles_count: articles.length,
+      });
       return [];
     }
   }

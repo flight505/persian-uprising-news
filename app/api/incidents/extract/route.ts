@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { extractIncidentsFromArticles } from '@/lib/incident-extractor';
 import { geocodeLocations } from '@/lib/geocoder';
 import { saveIncident, isFirestoreAvailable } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 export interface ExtractionRequest {
   articles: Array<{
@@ -58,11 +59,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔍 Extracting incidents from ${body.articles.length} articles...`);
+    logger.info('incidents_extraction_started', {
+      articleCount: body.articles.length,
+    });
 
     // Step 1: Extract incidents using NLP pattern matching
     const extractedIncidents = extractIncidentsFromArticles(body.articles);
-    console.log(`📊 Extracted ${extractedIncidents.length} potential incidents`);
+    logger.info('incidents_extracted', {
+      extractedCount: extractedIncidents.length,
+    });
 
     if (extractedIncidents.length === 0) {
       return NextResponse.json({
@@ -75,10 +80,14 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Geocode all unique locations
     const uniqueLocations = [...new Set(extractedIncidents.map((i) => i.location))];
-    console.log(`🗺️ Geocoding ${uniqueLocations.length} unique locations...`);
+    logger.info('geocoding_started', {
+      locationCount: uniqueLocations.length,
+    });
 
     const geocodedLocations = await geocodeLocations(uniqueLocations);
-    console.log(`✅ Geocoded ${geocodedLocations.size} locations`);
+    logger.info('geocoding_completed', {
+      geocodedCount: geocodedLocations.size,
+    });
 
     // Step 3: Build incidents with geocoded coordinates
     const incidents = [];
@@ -94,7 +103,10 @@ export async function POST(request: NextRequest) {
 
       // Only include incidents with sufficient confidence
       if (extracted.confidence < 40) {
-        console.log(`⚠️ Skipping low-confidence incident (${extracted.confidence}): ${extracted.title}`);
+        logger.debug('low_confidence_incident_skipped', {
+          confidence: extracted.confidence,
+          title: extracted.title,
+        });
         continue;
       }
 
@@ -131,13 +143,17 @@ export async function POST(request: NextRequest) {
       incidents.push(incident);
     }
 
-    console.log(`✅ Built ${incidents.length} incidents with geocoded locations`);
+    logger.info('incidents_built', {
+      incidentCount: incidents.length,
+    });
 
     // Step 4: Save to Firestore if requested and available
     let savedCount = 0;
 
     if (body.autoSave && isFirestoreAvailable()) {
-      console.log('💾 Saving incidents to Firestore...');
+      logger.info('incidents_save_started', {
+        incidentCount: incidents.length,
+      });
 
       for (const incident of incidents) {
         try {
@@ -146,12 +162,18 @@ export async function POST(request: NextRequest) {
           (incident as any).id = incidentId;
           savedCount++;
         } catch (error) {
-          console.error('Error saving incident:', error);
+          logger.error('incident_save_failed', {
+            title: incident.title,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
           errors.push(`Failed to save incident: ${incident.title}`);
         }
       }
 
-      console.log(`✅ Saved ${savedCount}/${incidents.length} incidents to Firestore`);
+      logger.info('incidents_saved', {
+        savedCount,
+        totalIncidents: incidents.length,
+      });
     } else if (body.autoSave && !isFirestoreAvailable()) {
       errors.push('Firestore not available - incidents not saved');
     }
@@ -164,7 +186,10 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
-    console.error('Error in /api/incidents/extract:', error);
+    logger.error('incidents_extraction_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Failed to extract incidents',
@@ -192,7 +217,9 @@ export async function GET(request: NextRequest) {
       supportedSources: ['telegram', 'twitter', 'perplexity'],
     });
   } catch (error) {
-    console.error('Error getting extraction stats:', error);
+    logger.error('extraction_stats_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return NextResponse.json({ error: 'Failed to get stats' }, { status: 500 });
   }
 }

@@ -3,6 +3,8 @@
  * Implements batched multi-topic queries for cost optimization
  */
 
+import { logger } from '@/lib/logger';
+
 export interface PerplexityArticle {
   title: string;
   summary: string;
@@ -202,8 +204,9 @@ export async function fetchPerplexityNews(): Promise<PerplexityArticle[]> {
     // Now extract the JSON array
     const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
-      console.warn('No JSON array found in Perplexity response');
-      console.log('Response content:', content.substring(0, 500));
+      logger.warn('perplexity_no_json_array', {
+        content_preview: content.substring(0, 500)
+      });
       return parseNonJsonResponse(content, data.citations || []);
     }
 
@@ -211,8 +214,10 @@ export async function fetchPerplexityNews(): Promise<PerplexityArticle[]> {
     try {
       articles = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.log('Attempted to parse:', jsonMatch[0].substring(0, 200));
+      logger.error('perplexity_json_parse_error', {
+        error: parseError instanceof Error ? parseError.message : 'Unknown error',
+        json_preview: jsonMatch[0].substring(0, 200)
+      });
       return parseNonJsonResponse(content, data.citations || []);
     }
 
@@ -227,7 +232,9 @@ export async function fetchPerplexityNews(): Promise<PerplexityArticle[]> {
 
     return articles;
   } catch (error) {
-    console.error('Error fetching from Perplexity:', error);
+    logger.error('perplexity_fetch_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     throw error;
   }
 }
@@ -277,10 +284,12 @@ export function getArticlesByTopic(articles: PerplexityArticle[], topicId: strin
 export async function testPerplexityConnection(): Promise<boolean> {
   try {
     const articles = await fetchPerplexityNews();
-    console.log(`✅ Perplexity API working. Retrieved ${articles.length} articles.`);
+    logger.info('perplexity_test_successful', { article_count: articles.length });
     return true;
   } catch (error) {
-    console.error('❌ Perplexity API test failed:', error);
+    logger.error('perplexity_test_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return false;
   }
 }

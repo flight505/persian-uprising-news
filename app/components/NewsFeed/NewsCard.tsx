@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Badge } from '@/app/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { offlineDB } from '@/lib/offline-db';
+import { logger } from '@/lib/logger';
 
 interface NewsCardProps {
   id?: string;
@@ -96,7 +97,10 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
         );
       }
     } catch (error) {
-      console.error('Translation error:', error);
+      logger.error('translation_failed', {
+        component: 'NewsCard',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       setTranslationError('Translation unavailable');
     } finally {
       setIsTranslating(false);
@@ -214,10 +218,18 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
           >
             {displaySummary}
           </p>
-          {displaySummary.length > 200 && (
+          {displaySummary.length > 150 && (
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+                logger.debug('article_expand_toggle', {
+                  component: 'NewsCard',
+                  isExpanded: !isExpanded,
+                });
+              }}
+              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors cursor-pointer"
             >
               {isExpanded ? '← Show less' : 'Show more →'}
             </button>

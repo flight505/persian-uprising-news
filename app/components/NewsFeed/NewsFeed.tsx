@@ -11,6 +11,7 @@ import SearchBar from '../Search/SearchBar';
 import Filters, { FilterState } from '../Search/Filters';
 import SuggestChannelModal from './SuggestChannelModal';
 import { offlineDB, isOnline } from '@/lib/offline-db';
+import { logger } from '@/lib/logger';
 
 interface Article {
   id: string;
@@ -51,7 +52,7 @@ export default function NewsFeed() {
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
 
   const { data, error, isLoading, mutate } = useSWR<NewsResponse>(
-    `/api/news?page=${page}&limit=20`,
+    `/api/news?page=${page}&limit=20&v=2`,
     fetcher,
     {
       refreshInterval: 600000,
@@ -62,13 +63,18 @@ export default function NewsFeed() {
   );
 
   useEffect(() => {
-    offlineDB.init().catch(err => console.error('Failed to init IndexedDB:', err));
+    offlineDB.init().catch(err =>
+      logger.error('indexeddb_init_failed', {
+        component: 'NewsFeed',
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+    );
 
     const handleOnlineStatus = () => {
       setIsOffline(!navigator.onLine);
 
       if (navigator.onLine && isOffline) {
-        console.log('📡 Back online, refreshing data...');
+        logger.debug('online_status_restored', { component: 'NewsFeed' });
         mutate();
       }
     };
@@ -85,6 +91,18 @@ export default function NewsFeed() {
 
   useEffect(() => {
     if (data?.articles) {
+      // Check if articles have url field (migration check)
+      const hasValidUrls = data.articles.every(a => a.url && a.url.length > 0);
+
+      if (!hasValidUrls) {
+        logger.warn('articles_missing_url_field', {
+          component: 'NewsFeed',
+          articlesCount: data.articles.length,
+        });
+        mutate();
+        return;
+      }
+
       if (page === 0) {
         setAllArticles(data.articles);
       } else {
@@ -93,21 +111,32 @@ export default function NewsFeed() {
 
       if (isOnline()) {
         offlineDB.cacheArticles(data.articles).catch(err =>
-          console.error('Failed to cache articles:', err)
+          logger.error('article_cache_failed', {
+            component: 'NewsFeed',
+            error: err instanceof Error ? err.message : 'Unknown error',
+          })
         );
       }
     }
-  }, [data, page]);
+  }, [data, page, mutate]);
 
   useEffect(() => {
     if (isOffline && allArticles.length === 0 && !isLoadingOffline) {
       setIsLoadingOffline(true);
       offlineDB.getAllArticles()
         .then(cachedArticles => {
-          console.log(`📦 Loaded ${cachedArticles.length} articles from offline cache`);
+          logger.debug('offline_articles_loaded', {
+            component: 'NewsFeed',
+            articlesCount: cachedArticles.length,
+          });
           setAllArticles(cachedArticles);
         })
-        .catch(err => console.error('Failed to load offline articles:', err))
+        .catch(err =>
+          logger.error('offline_articles_load_failed', {
+            component: 'NewsFeed',
+            error: err instanceof Error ? err.message : 'Unknown error',
+          })
+        )
         .finally(() => setIsLoadingOffline(false));
     }
   }, [isOffline, allArticles.length, isLoadingOffline]);
@@ -127,7 +156,10 @@ export default function NewsFeed() {
         mutate();
       }
     } catch (error) {
-      console.error('Failed to refresh:', error);
+      logger.error('news_refresh_failed', {
+        component: 'NewsFeed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     } finally {
       setIsRefreshing(false);
     }

@@ -3,6 +3,8 @@
  * Stores articles for offline access and queues reports for background sync
  */
 
+import { logger } from '@/lib/logger';
+
 const DB_NAME = 'persian-uprising-db';
 const DB_VERSION = 2;
 
@@ -65,13 +67,15 @@ class OfflineDB {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('IndexedDB error:', request.error);
+        logger.error('indexeddb_error', {
+        error: request.error?.message || 'Unknown error'
+      });
         reject(request.error);
       };
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('📦 IndexedDB initialized');
+        logger.info('indexeddb_initialized');
         resolve();
       };
 
@@ -97,7 +101,7 @@ class OfflineDB {
           translationsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
         }
 
-        console.log('📦 IndexedDB schema created');
+        logger.info('indexeddb_schema_created');
       };
     });
   }
@@ -128,7 +132,7 @@ class OfflineDB {
       transaction.onerror = () => reject(transaction.error);
     });
 
-    console.log(`💾 Cached ${articles.length} articles for offline access`);
+    logger.info('articles_cached_offline', { count: articles.length });
 
     // Now clean up old articles in a separate transaction
     const allArticles = await this.getAllArticles();
@@ -146,7 +150,7 @@ class OfflineDB {
         }
 
         transaction.oncomplete = () => {
-          console.log(`🗑️  Removed ${articlesToDelete.length} old cached articles`);
+          logger.debug('old_articles_removed', { count: articlesToDelete.length });
           resolve();
         };
         transaction.onerror = () => reject(transaction.error);
@@ -186,7 +190,7 @@ class OfflineDB {
     const store = transaction.objectStore(ARTICLES_STORE);
     await store.clear();
 
-    console.log('🗑️  Cleared all cached articles');
+    logger.info('cached_articles_cleared');
   }
 
   /**
@@ -205,7 +209,7 @@ class OfflineDB {
     const store = transaction.objectStore(PENDING_REPORTS_STORE);
     await store.add(pendingReport);
 
-    console.log('📝 Queued report for background sync:', pendingReport.id);
+    logger.info('report_queued', { report_id: pendingReport.id });
     return pendingReport.id;
   }
 
@@ -235,7 +239,7 @@ class OfflineDB {
     const store = transaction.objectStore(PENDING_REPORTS_STORE);
     await store.delete(id);
 
-    console.log('✅ Removed synced report:', id);
+    logger.debug('synced_report_removed', { report_id: id });
   }
 
   /**
@@ -248,7 +252,7 @@ class OfflineDB {
     const store = transaction.objectStore(PENDING_REPORTS_STORE);
     await store.clear();
 
-    console.log('🗑️  Cleared all pending reports');
+    logger.info('pending_reports_cleared');
   }
 
   /**
@@ -295,7 +299,7 @@ class OfflineDB {
     const store = transaction.objectStore(TRANSLATIONS_STORE);
     await store.put(translation);
 
-    console.log('💾 Cached translation for article:', articleId);
+    logger.debug('translation_cached', { article_id: articleId });
 
     // Clean up old translations (keep last 7 days)
     await this.cleanupOldTranslations();
@@ -362,7 +366,7 @@ class OfflineDB {
     const store = transaction.objectStore(TRANSLATIONS_STORE);
     await store.clear();
 
-    console.log('🗑️  Cleared all cached translations');
+    logger.info('cached_translations_cleared');
   }
 
   /**
@@ -407,7 +411,7 @@ class OfflineDB {
         toDelete.forEach(id => store.delete(id));
 
         transaction.oncomplete = () => {
-          console.log(`🗑️  Removed ${toDelete.length} old translations`);
+          logger.debug('old_translations_removed', { count: toDelete.length });
           resolve();
         };
         transaction.onerror = () => reject(transaction.error);

@@ -4,6 +4,7 @@
  */
 
 import { TranslationServiceClient } from '@google-cloud/translate';
+import { logger } from './logger';
 
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'coiled-cloud';
 const LOCATION = 'global';
@@ -98,7 +99,13 @@ export async function translateText(
 
     return { translatedText, detectedLanguage };
   } catch (error) {
-    console.error('Translation error:', error);
+    logger.error('translation_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      source_lang: sourceLang,
+      target_lang: targetLang,
+      text_length: text.length,
+    });
     throw new Error('Translation service unavailable');
   }
 }
@@ -146,7 +153,13 @@ export async function batchTranslate(
 
     return { translations, detectedLanguage };
   } catch (error) {
-    console.error('Batch translation error:', error);
+    logger.error('batch_translation_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      source_lang: sourceLang,
+      target_lang: targetLang,
+      batch_size: texts.length,
+    });
     throw new Error('Translation service unavailable');
   }
 }
@@ -182,7 +195,11 @@ export async function detectLanguage(text: string): Promise<SupportedLanguage> {
 
     return 'en';
   } catch (error) {
-    console.error('Language detection error:', error);
+    logger.error('language_detection_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      text_length: text.length,
+      fallback_lang: 'en',
+    });
     return 'en';
   }
 }

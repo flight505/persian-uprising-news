@@ -3,6 +3,8 @@
  * Handles image uploads to Cloudflare Images CDN
  */
 
+import { logger } from '@/lib/logger';
+
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 
@@ -30,7 +32,7 @@ export async function uploadImageToCloudflare(
   filename: string
 ): Promise<string | null> {
   if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
-    console.error('Cloudflare credentials not configured');
+    logger.error('cloudflare_credentials_missing');
     return null;
   }
 
@@ -58,14 +60,14 @@ export async function uploadImageToCloudflare(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Cloudflare upload failed:', response.status, errorText);
+      logger.error('cloudflare_upload_failed', { status: response.status, error: errorText });
       return null;
     }
 
     const data: CloudflareImageResponse = await response.json();
 
     if (!data.success) {
-      console.error('Cloudflare upload error:', data.errors);
+      logger.error('cloudflare_upload_error', { errors: data.errors });
       return null;
     }
 
@@ -73,11 +75,13 @@ export async function uploadImageToCloudflare(
     const imageId = data.result.id;
     const imageUrl = `https://imagedelivery.net/${CLOUDFLARE_ACCOUNT_ID}/${imageId}/public`;
 
-    console.log(`✅ Image uploaded to Cloudflare: ${imageUrl}`);
+    logger.info('cloudflare_image_uploaded', { url: imageUrl });
     return imageUrl;
 
   } catch (error) {
-    console.error('Error uploading to Cloudflare:', error);
+    logger.error('cloudflare_upload_exception', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
@@ -102,7 +106,7 @@ export async function uploadMultipleImages(files: File[]): Promise<string[]> {
  */
 export async function deleteImageFromCloudflare(imageId: string): Promise<boolean> {
   if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
-    console.error('Cloudflare credentials not configured');
+    logger.error('cloudflare_credentials_missing');
     return false;
   }
 
@@ -121,7 +125,9 @@ export async function deleteImageFromCloudflare(imageId: string): Promise<boolea
     return data.success;
 
   } catch (error) {
-    console.error('Error deleting from Cloudflare:', error);
+    logger.error('cloudflare_delete_exception', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return false;
   }
 }

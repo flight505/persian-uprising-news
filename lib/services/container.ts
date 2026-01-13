@@ -14,6 +14,7 @@ import { IncidentService } from './incidents/incident-service';
 import { InMemoryRateLimiter } from './rate-limit/in-memory-rate-limiter';
 import { RedisRateLimiter } from './rate-limit/redis-rate-limiter';
 import { IRateLimiter } from './rate-limit/i-rate-limiter';
+import { logger } from '@/lib/logger';
 
 // Rate limit configurations for different endpoints
 const RATE_LIMIT_CONFIGS = {
@@ -82,7 +83,9 @@ export class ServiceContainer {
         )
       );
 
-      console.log(`[ServiceContainer] NewsService initialized with ${sources.length} sources`);
+      logger.info('news_service_initialized', {
+        sources_count: sources.length,
+      });
     }
 
     return this.instances.get('newsService');
@@ -91,7 +94,7 @@ export class ServiceContainer {
   static getIncidentService(): IncidentService {
     if (!this.instances.has('incidentService')) {
       this.instances.set('incidentService', new IncidentService());
-      console.log('[ServiceContainer] IncidentService initialized');
+      logger.info('incident_service_initialized');
     }
 
     return this.instances.get('incidentService');
@@ -144,10 +147,17 @@ export class ServiceContainer {
       if (hasRedis) {
         const limiter = new RedisRateLimiter(config);
         this.instances.set(name, limiter);
-        console.log(`[ServiceContainer] ${name} initialized (Redis, ${config.failMode} mode)`);
+        logger.info('rate_limiter_initialized', {
+          name,
+          storage: 'redis',
+          fail_mode: config.failMode,
+        });
       } else {
         this.instances.set(name, new InMemoryRateLimiter(config));
-        console.log(`[ServiceContainer] ${name} initialized (in-memory fallback)`);
+        logger.info('rate_limiter_initialized', {
+          name,
+          storage: 'in-memory',
+        });
       }
     }
 
@@ -156,7 +166,7 @@ export class ServiceContainer {
 
   static clear() {
     this.instances.clear();
-    console.log('[ServiceContainer] Service container cleared');
+    logger.info('service_container_cleared');
   }
 
   static has(serviceName: string): boolean {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPushNotification } from '@/lib/push-notifications';
+import { logger } from '@/lib/logger';
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
@@ -51,7 +52,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    logger.error('push_notification_send_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to send notifications', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

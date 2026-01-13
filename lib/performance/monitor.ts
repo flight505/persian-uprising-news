@@ -3,6 +3,8 @@
  * Tracks operation timing and logs slow operations
  */
 
+import { logger } from '@/lib/logger';
+
 export class PerformanceMonitor {
   private timers = new Map<string, number>();
   private measurements = new Map<string, number[]>();
@@ -25,7 +27,7 @@ export class PerformanceMonitor {
   end(label: string): number {
     const start = this.timers.get(label);
     if (!start) {
-      console.warn(`⚠️  No timer started for: ${label}`);
+      logger.warn('timer_not_started', { label });
       return 0;
     }
 
@@ -39,9 +41,9 @@ export class PerformanceMonitor {
 
     // Log based on duration
     if (duration > this.slowThreshold) {
-      console.warn(`🐌 Slow operation: ${label} took ${duration}ms`);
+      logger.warn('slow_operation', { label, duration_ms: duration });
     } else {
-      console.log(`⚡ ${label}: ${duration}ms`);
+      logger.debug('operation_completed', { label, duration_ms: duration });
     }
 
     return duration;
@@ -126,27 +128,11 @@ export class PerformanceMonitor {
     const labels = Object.keys(stats);
 
     if (labels.length === 0) {
-      console.log('📊 No performance measurements recorded');
+      logger.info('performance_summary_empty');
       return;
     }
 
-    console.log('\n📊 Performance Summary:');
-    console.log('━'.repeat(80));
-
-    labels.forEach(label => {
-      const stat = stats[label];
-      if (stat) {
-        console.log(
-          `${label.padEnd(40)} | ` +
-          `Count: ${stat.count.toString().padStart(3)} | ` +
-          `Avg: ${stat.avg.toString().padStart(4)}ms | ` +
-          `Min: ${stat.min.toString().padStart(4)}ms | ` +
-          `Max: ${stat.max.toString().padStart(4)}ms`
-        );
-      }
-    });
-
-    console.log('━'.repeat(80) + '\n');
+    logger.info('performance_summary', { stats });
   }
 }
 

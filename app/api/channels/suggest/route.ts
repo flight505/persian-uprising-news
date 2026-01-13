@@ -15,6 +15,7 @@ import {
   normalizeHandle,
   type CreateChannelSuggestionInput,
 } from '@/lib/validators/channel-validator';
+import { logger } from '@/lib/logger';
 
 export interface ChannelSuggestion {
   id: string;
@@ -115,9 +116,17 @@ export async function POST(req: NextRequest) {
     if (isFirestoreAvailable()) {
       const db = getDb();
       await db!.collection('channel_suggestions').doc(suggestionId).set(suggestion);
-      console.log(`[Channels] New suggestion: ${suggestion.type}/${suggestion.handle} (ID: ${suggestionId})`);
+      logger.info('channel_suggestion_created', {
+        suggestionId,
+        type: suggestion.type,
+        handle: suggestion.handle,
+      });
     } else {
-      console.log('[Channels] Firestore unavailable, suggestion logged:', suggestion);
+      logger.warn('channel_suggestion_firestore_unavailable', {
+        suggestionId,
+        type: suggestion.type,
+        handle: suggestion.handle,
+      });
     }
 
     const headers = createRateLimitHeaders(rateLimitResult, config);
@@ -130,7 +139,10 @@ export async function POST(req: NextRequest) {
       { headers }
     );
   } catch (error) {
-    console.error('Error submitting channel suggestion:', error);
+    logger.error('channel_suggestion_submit_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         success: false,
@@ -211,7 +223,10 @@ export async function GET(req: NextRequest) {
       pagination: { limit, offset },
     });
   } catch (error) {
-    console.error('Error fetching suggestions:', error);
+    logger.error('channel_suggestions_fetch_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch suggestions' },
       { status: 500 }
@@ -279,14 +294,20 @@ export async function PATCH(req: NextRequest) {
         ...(rejectionReason && { rejectionReason }),
       });
 
-    console.log(`[Channels] Suggestion ${suggestionId} ${status}`);
+    logger.info('channel_suggestion_updated', {
+      suggestionId,
+      status,
+    });
 
     return NextResponse.json({
       success: true,
       message: `Suggestion ${status}`,
     });
   } catch (error) {
-    console.error('Error updating suggestion:', error);
+    logger.error('channel_suggestion_update_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to update suggestion' },
       { status: 500 }

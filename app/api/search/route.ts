@@ -9,6 +9,7 @@ import {
   SearchOptions,
 } from '@/lib/algolia';
 import { getArticles, isFirestoreAvailable } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 // Initialize search on first request
 let searchInitialized = false;
@@ -27,7 +28,9 @@ async function ensureSearchInitialized() {
     const articles = await getArticles(1000);
     initFuse(articles);
     searchInitialized = true;
-    console.log(`📚 Fuse.js initialized with ${articles.length} articles from Firestore`);
+    logger.info('search_fuse_initialized', {
+      articleCount: articles.length,
+    });
   } else {
     throw new Error('Neither Algolia nor Firestore available for search');
   }
@@ -106,7 +109,10 @@ export async function GET(request: NextRequest) {
       mode: getSearchMode(),
     });
   } catch (error) {
-    console.error('Error in /api/search:', error);
+    logger.error('search_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Search failed',
@@ -155,7 +161,10 @@ export async function POST(request: NextRequest) {
       message: 'Articles indexed successfully',
     });
   } catch (error) {
-    console.error('Error indexing articles:', error);
+    logger.error('search_indexing_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Indexing failed',

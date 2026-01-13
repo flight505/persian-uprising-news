@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "prebuild": "tsx scripts/generate-icons.ts",
     "generate-vapid-keys": "tsx scripts/generate-vapid-keys.ts",
     "test-search": "tsx scripts/test-search.ts",
@@ -20,7 +21,10 @@
     "test:security": "tsx __tests__/security/run-all.ts",
     "test:security:rate-limiter": "tsx __tests__/security/rate-limiter.test.ts",
     "test:security:validators": "tsx __tests__/security/validators.test.ts",
-    "test:security:env": "tsx __tests__/security/env-validator.test.ts"
+    "test:security:env": "tsx __tests__/security/env-validator.test.ts",
+    "test:news-api": "tsx __tests__/api/news-url-mapping.test.ts",
+    "test:links": "tsx __tests__/link-functionality.test.ts",
+    "test:diagnose": "tsx __tests__/diagnose-ui.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.709.0",

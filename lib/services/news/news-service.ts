@@ -3,6 +3,7 @@ import { IDeduplicator } from './deduplication/i-deduplicator';
 import { IArticleRepository } from './repositories/i-article-repository';
 import { INotificationService } from '../notifications/i-notification-service';
 import { IIncidentExtractor } from '../incidents/i-incident-extractor';
+import { logger } from '@/lib/logger';
 
 export interface RefreshResult {
   articlesAdded: number;
@@ -25,13 +26,23 @@ export class NewsService {
   }
 
   async refresh(): Promise<RefreshResult> {
-    console.log('🔄 Starting news refresh...');
+    const endTimer = logger.time('news_refresh');
+
+    logger.info('news_refresh_started', {
+      sources_count: this.sources.length,
+    });
 
     const articles = await this.fetchFromAllSources();
-    console.log(`📥 Fetched ${articles.length} articles from ${this.sources.length} sources`);
+    logger.info('articles_fetched', {
+      count: articles.length,
+      sources: this.sources.length,
+    });
 
     if (articles.length === 0) {
-      console.log('⚠️ No new articles returned from any source');
+      logger.warn('no_articles_fetched', {
+        sources: this.sources.map(s => s.name),
+      });
+      endTimer();
       return {
         articlesAdded: 0,
         articlesTotal: 0,
@@ -41,21 +52,35 @@ export class NewsService {
     }
 
     const recentArticles = await this.repository.getRecent(24);
-    console.log(`📚 Found ${recentArticles.length} recent articles for deduplication`);
+    logger.debug('recent_articles_loaded', {
+      count: recentArticles.length,
+      hours: 24,
+    });
 
     const deduplicated = await this.deduplicator.process(articles, recentArticles);
 
     const saved = await this.repository.saveMany(deduplicated);
-    console.log(`💾 Saved ${saved.length} new articles`);
+    logger.info('articles_saved', {
+      count: saved.length,
+      duplicates_removed: articles.length - saved.length,
+    });
 
     if (saved.length > 0) {
       this.notificationService.notifyNewArticles(saved).catch(err =>
-        console.error('Failed to send push notification:', err)
+        logger.error('push_notification_failed', {
+          error: err.message,
+          articles_count: saved.length,
+        })
       );
     }
 
     const incidents = await this.incidentExtractor.extractFromArticles(saved);
-    console.log(`🚨 Extracted ${incidents.length} incidents`);
+    logger.info('incidents_extracted', {
+      count: incidents.length,
+      from_articles: saved.length,
+    });
+
+    endTimer();
 
     return {
       articlesAdded: saved.length,
@@ -68,7 +93,7 @@ export class NewsService {
   private async fetchFromAllSources() {
     const results = await Promise.allSettled(
       this.sources.map(source => {
-        console.log(`📡 Fetching from ${source.name}...`);
+        logger.debug('source_fetch_started', { source: source.name });
         return source.fetch();
       })
     );
@@ -79,14 +104,20 @@ export class NewsService {
       )
       .flatMap((result, index) => {
         const sourceName = this.sources[index].name;
-        console.log(`✅ ${sourceName}: ${result.value.length} articles`);
+        logger.info('source_fetch_completed', {
+          source: sourceName,
+          articles_count: result.value.length,
+        });
         return result.value;
       });
 
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         const sourceName = this.sources[index].name;
-        console.error(`❌ ${sourceName} failed:`, result.reason);
+        logger.error('source_fetch_failed', {
+          source: sourceName,
+          error: result.reason?.message || String(result.reason),
+        });
       }
     });
 

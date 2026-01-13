@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 interface TweetEmbedProps {
   url: string;
@@ -102,7 +103,11 @@ export default function TweetEmbed({ url, isDarkMode = false }: TweetEmbedProps)
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error('Error embedding tweet:', err);
+        logger.error('tweet_embed_failed', {
+          component: 'TweetEmbed',
+          tweetId,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
         setError('Failed to load tweet');
         setIsLoading(false);
       });

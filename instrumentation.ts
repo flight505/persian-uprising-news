@@ -10,14 +10,17 @@ export async function register() {
   // Only run on server-side
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { validateEnv, logServiceStatus } = await import('@/lib/config/env-validator');
+    const { logger } = await import('@/lib/logger');
 
     try {
-      console.log('[Startup] Validating environment configuration...');
+      logger.info('startup_env_validation_started');
       validateEnv();
       logServiceStatus();
-      console.log('[Startup] Environment validation complete');
+      logger.info('startup_env_validation_complete');
     } catch (error) {
-      console.error('[Startup] Environment validation failed:', error);
+      logger.error('startup_env_validation_failed', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       // In production, this will throw and prevent startup
       // In development, it will log a warning and continue
     }

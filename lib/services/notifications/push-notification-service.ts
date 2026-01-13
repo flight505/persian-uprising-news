@@ -1,6 +1,7 @@
 import { INotificationService, NotificationResult } from './i-notification-service';
 import { ArticleWithHash } from '../news/deduplication/i-deduplicator';
 import { sendPushNotification } from '@/lib/push-notifications';
+import { logger } from '@/lib/logger';
 
 export class PushNotificationService implements INotificationService {
   async notifyNewArticles(articles: ArticleWithHash[]): Promise<NotificationResult> {
@@ -20,7 +21,10 @@ export class PushNotificationService implements INotificationService {
       const result = await sendPushNotification(title, message, '/');
 
       if (result.sent > 0) {
-        console.log(`📬 Sent push notification to ${result.sent} subscriber(s)`);
+        logger.info('push_notification_sent', {
+          subscribers: result.sent,
+          articles_count: articles.length,
+        });
       }
 
       return {
@@ -29,7 +33,11 @@ export class PushNotificationService implements INotificationService {
         error: result.error,
       };
     } catch (error) {
-      console.error('Error sending new article notification:', error);
+      logger.error('push_notification_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        articles_count: articles.length,
+      });
       return {
         success: false,
         sent: 0,

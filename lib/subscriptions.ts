@@ -2,6 +2,7 @@
  * Subscription storage and management using Firestore
  */
 
+import { logger } from '@/lib/logger';
 import {
   saveSubscription as saveFirestoreSubscription,
   getSubscriptions as getFirestoreSubscriptions,
@@ -29,7 +30,7 @@ export interface SubscriptionData extends PushSubscription {
  */
 export async function getActiveSubscriptions(): Promise<SubscriptionData[]> {
   if (!isFirestoreAvailable()) {
-    console.warn('⚠️ Firestore not available, returning empty subscriptions array');
+    logger.warn('firestore_unavailable_subscriptions');
     return [];
   }
 
@@ -44,7 +45,9 @@ export async function getActiveSubscriptions(): Promise<SubscriptionData[]> {
       lastNotified: sub.lastNotified,
     }));
   } catch (error) {
-    console.error('Error fetching subscriptions:', error);
+    logger.error('subscriptions_fetch_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }
@@ -64,7 +67,9 @@ export async function addSubscription(subscription: SubscriptionData): Promise<v
       userAgent: subscription.userAgent,
     });
   } catch (error) {
-    console.error('Error saving subscription:', error);
+    logger.error('subscription_save_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     throw error;
   }
 }
@@ -80,7 +85,9 @@ export async function removeSubscription(id: string): Promise<void> {
   try {
     await deleteFirestoreSubscription(id);
   } catch (error) {
-    console.error('Error removing subscription:', error);
+    logger.error('subscription_remove_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     throw error;
   }
 }
@@ -97,7 +104,9 @@ export async function findSubscription(id: string): Promise<SubscriptionData | u
     const subscriptions = await getFirestoreSubscriptions();
     return subscriptions.find(sub => sub.id === id);
   } catch (error) {
-    console.error('Error finding subscription:', error);
+    logger.error('subscription_find_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return undefined;
   }
 }

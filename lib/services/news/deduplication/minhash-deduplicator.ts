@@ -7,6 +7,7 @@ import {
 } from '@/lib/minhash';
 import { createLSHIndex } from '@/lib/deduplication/lsh-index';
 import { perfMonitor } from '@/lib/performance/monitor';
+import { logger } from '@/lib/logger';
 
 export class MinHashDeduplicator implements IDeduplicator {
   private similarityThreshold = 0.8;
@@ -34,21 +35,26 @@ export class MinHashDeduplicator implements IDeduplicator {
       // Build LSH index for O(k) fuzzy duplicate lookup (k ≈ 5-10 bucket size)
       const lshIndex = createLSHIndex(recentArticles, this.similarityThreshold);
       const stats = lshIndex.getStats();
-      console.log(
-        `📊 LSH Index: ${stats.buckets} buckets, ${stats.articles} articles, ` +
-        `avg ${stats.avgBucketSize.toFixed(1)} per bucket`
-      );
+      logger.debug('lsh_index_created', {
+        buckets: stats.buckets,
+        articles: stats.articles,
+        avg_bucket_size: stats.avgBucketSize,
+      });
 
       return articlesWithHash.filter(newArticle => {
         // O(1) exact duplicate check
         if (recentHashSet.has(newArticle.contentHash)) {
-          console.log(`⏭️  Skipping exact duplicate: ${newArticle.title.substring(0, 50)}...`);
+          logger.debug('exact_duplicate_skipped', {
+            title: newArticle.title.substring(0, 50),
+          });
           return false;
         }
 
         // O(k) fuzzy duplicate check (k ≈ 5-10)
         if (lshIndex.isDuplicate(newArticle, this.similarityThreshold)) {
-          console.log(`⏭️  Skipping fuzzy duplicate: ${newArticle.title.substring(0, 50)}...`);
+          logger.debug('fuzzy_duplicate_skipped', {
+            title: newArticle.title.substring(0, 50),
+          });
           return false;
         }
 
@@ -56,10 +62,11 @@ export class MinHashDeduplicator implements IDeduplicator {
       });
     });
 
-    console.log(
-      `✅ Deduplication: ${articles.length} → ${deduplicated.length} ` +
-      `(${articles.length - deduplicated.length} duplicates removed)`
-    );
+    logger.info('deduplication_completed', {
+      input_count: articles.length,
+      output_count: deduplicated.length,
+      duplicates_removed: articles.length - deduplicated.length,
+    });
 
     return deduplicated;
   }

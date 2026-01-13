@@ -4,6 +4,8 @@
  * Cost: FREE - uses Telegram Bot API
  */
 
+import { logger } from '@/lib/logger';
+
 export interface TelegramArticle {
   id: string;
   title: string;
@@ -85,12 +87,12 @@ export async function fetchTelegramNews(): Promise<TelegramArticle[]> {
   const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!BOT_TOKEN) {
-    console.warn('⚠️ TELEGRAM_BOT_TOKEN not set. Skipping Telegram scraping.');
+    logger.warn('telegram_bot_token_missing');
     return [];
   }
 
   try {
-    console.log('📱 Fetching messages from Telegram channels...');
+    logger.info('telegram_fetch_started');
 
     const articles: TelegramArticle[] = [];
 
@@ -104,7 +106,7 @@ export async function fetchTelegramNews(): Promise<TelegramArticle[]> {
         );
 
         if (!channelInfoResponse.ok) {
-          console.warn(`⚠️ Could not access channel ${channel}`);
+          logger.warn('telegram_channel_access_failed', { channel });
           continue;
         }
 
@@ -119,7 +121,7 @@ export async function fetchTelegramNews(): Promise<TelegramArticle[]> {
         );
 
         if (!messagesResponse.ok) {
-          console.warn(`⚠️ Could not fetch messages from ${channel}`);
+          logger.warn('telegram_messages_fetch_failed', { channel });
           continue;
         }
 
@@ -176,7 +178,10 @@ export async function fetchTelegramNews(): Promise<TelegramArticle[]> {
           });
         }
       } catch (error) {
-        console.error(`Error fetching from ${channel}:`, error);
+        logger.error('telegram_channel_error', {
+          channel,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
         continue;
       }
     }
@@ -185,11 +190,13 @@ export async function fetchTelegramNews(): Promise<TelegramArticle[]> {
     articles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
     const recentArticles = articles.slice(0, 20);
 
-    console.log(`📱 Received ${recentArticles.length} messages from Telegram`);
+    logger.info('telegram_fetch_completed', { count: recentArticles.length });
     return recentArticles;
 
   } catch (error) {
-    console.error('Error fetching Telegram data:', error);
+    logger.error('telegram_fetch_error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 }

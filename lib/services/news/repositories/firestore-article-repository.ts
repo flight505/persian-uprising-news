@@ -8,11 +8,12 @@ import {
   isFirestoreAvailable,
   Article as FirestoreArticle,
 } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 export class FirestoreArticleRepository implements IArticleRepository {
   async getRecent(hoursBack: number = 24): Promise<ArticleWithHash[]> {
     if (!isFirestoreAvailable()) {
-      console.warn('⚠️ Firestore not available, returning empty array');
+      logger.warn('firestore_unavailable_get_recent', { hours_back: hoursBack });
       return [];
     }
 
@@ -20,7 +21,11 @@ export class FirestoreArticleRepository implements IArticleRepository {
       const articles = await getRecentArticles(hoursBack);
       return articles as ArticleWithHash[];
     } catch (error) {
-      console.error('Error fetching recent articles:', error);
+      logger.error('fetch_recent_articles_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        hours_back: hoursBack,
+      });
       return [];
     }
   }
@@ -42,7 +47,9 @@ export class FirestoreArticleRepository implements IArticleRepository {
     })) as FirestoreArticle[];
 
     await saveArticles(firestoreArticles);
-    console.log(`💾 Saved ${firestoreArticles.length} articles to Firestore`);
+    logger.info('articles_saved_to_firestore', {
+      articles_count: firestoreArticles.length,
+    });
 
     return articles;
   }

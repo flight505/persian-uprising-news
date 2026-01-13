@@ -6,6 +6,7 @@ import {
   Incident,
 } from '@/lib/firestore';
 import { IncidentDeduplicator } from './incident-deduplicator';
+import { logger } from '@/lib/logger';
 
 export class IncidentService {
   private deduplicator = new IncidentDeduplicator();
@@ -14,7 +15,10 @@ export class IncidentService {
     bounds?: { north: number; south: number; east: number; west: number };
   }): Promise<Incident[]> {
     if (!isFirestoreAvailable()) {
-      console.warn('⚠️ Firestore not available, returning empty array');
+      logger.warn('firestore_unavailable', {
+        operation: 'get_incidents',
+        returning_empty: true,
+      });
       return [];
     }
 
@@ -44,7 +48,11 @@ export class IncidentService {
 
       return incidents;
     } catch (error) {
-      console.error('Error fetching incidents:', error);
+      logger.error('incidents_fetch_failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        filters: filters,
+      });
       return [];
     }
   }
@@ -61,9 +69,12 @@ export class IncidentService {
     const deduplicationResult = this.deduplicator.checkDuplicate(data, existingIncidents);
 
     if (deduplicationResult.isDuplicate) {
-      console.log(
-        `⚠️ Duplicate incident detected: ${deduplicationResult.reason} (similarity: ${(deduplicationResult.similarity! * 100).toFixed(1)}%)`
-      );
+      logger.warn('duplicate_incident_detected', {
+        reason: deduplicationResult.reason,
+        similarity: deduplicationResult.similarity,
+        incident_type: data.type,
+        title: data.title.substring(0, 50),
+      });
       throw new Error(
         `This incident may already be reported. ${deduplicationResult.reason}. ` +
         `Please check existing reports or provide more specific details.`
@@ -71,7 +82,13 @@ export class IncidentService {
     }
 
     const incidentId = await saveIncident(data);
-    console.log(`📍 New incident reported: ${data.type} - ${data.title} (ID: ${incidentId})`);
+    logger.info('incident_created', {
+      incident_id: incidentId,
+      type: data.type,
+      title: data.title,
+      reported_by: data.reportedBy,
+      verified: data.verified,
+    });
 
     return incidentId;
   }

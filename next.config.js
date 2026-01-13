@@ -35,6 +35,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false, // Disabled for Leaflet compatibility
+  outputFileTracingRoot: require('path').join(__dirname), // Fix workspace root warning
   images: {
     domains: ['imagedelivery.net'], // Cloudflare Images
     formats: ['image/webp', 'image/avif'],

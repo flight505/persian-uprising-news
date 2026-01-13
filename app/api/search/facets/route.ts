@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getFacets, initAlgolia, initFuse, getSearchMode } from '@/lib/algolia';
 import { getArticles, isFirestoreAvailable } from '@/lib/firestore';
+import { logger } from '@/lib/logger';
 
 let facetsInitialized = false;
 
@@ -34,7 +35,10 @@ export async function GET() {
       mode: getSearchMode(),
     });
   } catch (error) {
-    console.error('Error fetching facets:', error);
+    logger.error('facets_fetch_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Failed to fetch facets',

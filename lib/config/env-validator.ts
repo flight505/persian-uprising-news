@@ -11,6 +11,7 @@
  */
 
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 // Base environment schema
 const baseEnvSchema = z.object({
@@ -165,11 +166,11 @@ export function validateEnv(): ValidatedEnv {
     const errorMessage = `Environment validation failed:\n${errors.join('\n')}`;
 
     if (process.env.NODE_ENV === 'production') {
-      console.error(`[ENV] ${errorMessage}`);
+      logger.error('env_validation_failed', { message: errorMessage });
       throw new Error('Environment validation failed. Check logs for details.');
     } else {
-      console.warn(`[ENV] WARNING: ${errorMessage}`);
-      console.warn('[ENV] Continuing in development mode with partial configuration');
+      logger.warn('env_validation_failed_development', { message: errorMessage });
+      logger.warn('env_continuing_with_partial_config');
 
       // Return partial env in development (type-unsafe fallback)
       validatedEnv = process.env as unknown as ValidatedEnv;
@@ -177,7 +178,7 @@ export function validateEnv(): ValidatedEnv {
     }
   }
 
-  console.log('[ENV] Environment variables validated successfully');
+  logger.info('env_validation_successful');
   validatedEnv = result.data;
   return validatedEnv;
 }
@@ -272,13 +273,12 @@ export function logServiceStatus(): void {
     .filter(([, v]) => !v)
     .map(([k]) => k);
 
-  console.log('[ENV] Service Status:');
-  if (enabled.length > 0) {
-    console.log(`  Enabled: ${enabled.join(', ')}`);
-  }
-  if (disabled.length > 0) {
-    console.log(`  Disabled: ${disabled.join(', ')}`);
-  }
+  logger.info('service_status', {
+    enabled: enabled.join(', '),
+    disabled: disabled.join(', '),
+    enabled_count: enabled.length,
+    disabled_count: disabled.length
+  });
 }
 
 // Export validation status check

@@ -6,6 +6,7 @@ import {
 } from '@/lib/telegram-user-api';
 import { scrapeTelegram, ScrapedTelegramArticle } from '@/lib/telegram-scraper';
 import { getMockTelegramArticles, TelegramArticle } from '@/lib/telegram';
+import { logger } from '@/lib/logger';
 
 export class TelegramNewsSource implements INewsSource {
   readonly name = 'telegram';
@@ -30,7 +31,10 @@ export class TelegramNewsSource implements INewsSource {
         return await this.fetchMock();
       }
     } catch (error) {
-      console.error(`[${this.name}] Fetch failed:`, error);
+      logger.error('telegram_fetch_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return [];
     }
   }
@@ -42,7 +46,10 @@ export class TelegramNewsSource implements INewsSource {
       await client.disconnect();
       return this.normalizeUserAPI(articles);
     } catch (error) {
-      console.error(`[${this.name}] User API failed, falling back to Bot API:`, error);
+      logger.warn('telegram_user_api_failed_fallback', {
+        error: error instanceof Error ? error.message : String(error),
+        has_bot_token: !!this.botToken,
+      });
       if (this.botToken) {
         return await this.fetchBotAPI();
       }
@@ -55,7 +62,9 @@ export class TelegramNewsSource implements INewsSource {
       const articles = await scrapeTelegram(20);
       return this.normalizeBotAPI(articles);
     } catch (error) {
-      console.error(`[${this.name}] Bot API failed, using mock data:`, error);
+      logger.warn('telegram_bot_api_failed_using_mock', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return await this.fetchMock();
     }
   }

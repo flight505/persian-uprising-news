@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getBotInfo, scrapeTelegram, deleteWebhook } from '@/lib/telegram-scraper';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/telegram/test
@@ -34,7 +35,10 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Error in /api/telegram/test:', error);
+    logger.error('telegram_test_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Failed to test Telegram bot',

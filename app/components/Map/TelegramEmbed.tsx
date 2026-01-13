@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 interface TelegramEmbedProps {
   url: string;
@@ -71,7 +72,11 @@ export default function TelegramEmbed({ url, isDarkMode = false }: TelegramEmbed
     };
 
     script.onerror = () => {
-      console.warn('Telegram widget failed, trying iframe method');
+      logger.debug('telegram_widget_failed', {
+        component: 'TelegramEmbed',
+        channelName,
+        postId,
+      });
       loadTelegramIframe(channelName, postId);
     };
 
@@ -100,7 +105,11 @@ export default function TelegramEmbed({ url, isDarkMode = false }: TelegramEmbed
     };
 
     iframe.onerror = () => {
-      console.warn('Telegram iframe failed, falling back to link');
+      logger.debug('telegram_iframe_failed', {
+        component: 'TelegramEmbed',
+        channelName,
+        postId,
+      });
       setError('Unable to embed Telegram post');
       setIsLoading(false);
       setEmbedMethod('link');

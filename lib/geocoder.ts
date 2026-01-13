@@ -4,6 +4,8 @@
  * Implements rate limiting (1 request/second) and caching
  */
 
+import { logger } from '@/lib/logger';
+
 export interface GeocodedLocation {
   lat: number;
   lon: number;
@@ -204,14 +206,14 @@ export async function geocodeLocation(location: string): Promise<GeocodedLocatio
     });
 
     if (!response.ok) {
-      console.error(`Nominatim API error: ${response.status}`);
+      logger.error('nominatim_api_error', { status: response.status });
       return null;
     }
 
     const data = await response.json();
 
     if (!data || data.length === 0) {
-      console.warn(`No geocoding results for: ${location}`);
+      logger.warn('geocoding_no_results', { location });
       return null;
     }
 
@@ -229,7 +231,10 @@ export async function geocodeLocation(location: string): Promise<GeocodedLocatio
 
     return geocoded;
   } catch (error) {
-    console.error(`Geocoding error for ${location}:`, error);
+    logger.error('geocoding_error', {
+      location,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return null;
   }
 }
