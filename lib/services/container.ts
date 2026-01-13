@@ -51,8 +51,8 @@ export class ServiceContainer {
     if (!this.instances.has('newsService')) {
       const sources = [];
 
-      if (process.env.PERPLEXITY_API_KEY) {
-        sources.push(new PerplexityNewsSource(process.env.PERPLEXITY_API_KEY));
+      if (process.env.RISE_UP_PERPLEXITY) {
+        sources.push(new PerplexityNewsSource(process.env.RISE_UP_PERPLEXITY));
       }
 
       const telegramSource = new TelegramNewsSource(

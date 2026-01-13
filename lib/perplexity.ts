@@ -145,10 +145,10 @@ Focus on the most recent and relevant news. Prioritize authoritative sources lik
  * Call Perplexity Sonar API
  */
 export async function fetchPerplexityNews(): Promise<PerplexityArticle[]> {
-  const apiKey = process.env.PERPLEXITY_API_KEY;
+  const apiKey = process.env.RISE_UP_PERPLEXITY;
 
   if (!apiKey) {
-    throw new Error('PERPLEXITY_API_KEY is not set');
+    throw new Error('RISE_UP_PERPLEXITY is not set');
   }
 
   const prompt = createBatchedPrompt();

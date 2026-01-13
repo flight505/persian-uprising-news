@@ -12,9 +12,9 @@ export async function GET() {
     vercel: !!process.env.VERCEL,
     checks: {
       perplexity: {
-        configured: !!process.env.PERPLEXITY_API_KEY,
-        keyLength: process.env.PERPLEXITY_API_KEY?.length || 0,
-        keyPrefix: process.env.PERPLEXITY_API_KEY?.substring(0, 8) || 'MISSING',
+        configured: !!process.env.RISE_UP_PERPLEXITY,
+        keyLength: process.env.RISE_UP_PERPLEXITY?.length || 0,
+        keyPrefix: process.env.RISE_UP_PERPLEXITY?.substring(0, 8) || 'MISSING',
       },
       telegram: {
         botToken: {
@@ -55,12 +55,12 @@ export async function GET() {
   };
 
   // Test Perplexity API
-  if (process.env.PERPLEXITY_API_KEY) {
+  if (process.env.RISE_UP_PERPLEXITY) {
     try {
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          'Authorization': `Bearer ${process.env.RISE_UP_PERPLEXITY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

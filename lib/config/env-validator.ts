@@ -22,7 +22,7 @@ const baseEnvSchema = z.object({
   FIREBASE_SERVICE_ACCOUNT: z.string().optional(),
 
   // Perplexity API (optional - news aggregation)
-  PERPLEXITY_API_KEY: z.string().min(1).optional(),
+  RISE_UP_PERPLEXITY: z.string().min(1).optional(),
 
   // Telegram User API (optional - channel scraping)
   TELEGRAM_API_ID: z.string().regex(/^\d+$/, 'Must be numeric').optional(),
@@ -215,7 +215,7 @@ export const serviceAvailability = {
 
   perplexity: () => {
     const env = getEnv();
-    return !!env.PERPLEXITY_API_KEY;
+    return !!env.RISE_UP_PERPLEXITY;
   },
 
   redis: () => {
