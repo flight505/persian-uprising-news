@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import { GeistSans } from 'geist/font/sans'
+import { TorBanner } from '@/app/components/Layout/TorBanner'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
       </head>
       <body className="antialiased">
+        <TorBanner />
         {children}
 
         {/* Twitter Widgets for embedded tweets */}

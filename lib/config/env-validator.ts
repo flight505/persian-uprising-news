@@ -52,6 +52,10 @@ const baseEnvSchema = z.object({
   CLOUDFLARE_API_TOKEN: z.string().optional(),
   CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
 
+  // Cloudflare Radar & General
+  CLOUDFLARE_RADAR_API_TOKEN: z.string().optional(),
+  CLOUDFLARE_API_KEY: z.string().optional(),
+
   // Algolia Search (optional)
   ALGOLIA_APP_ID: z.string().optional(),
   ALGOLIA_ADMIN_KEY: z.string().optional(),

@@ -59,10 +59,14 @@ export interface Article {
   summary: string;
   content: string;
   imageUrl?: string;
+  imageHash?: string; // Perceptual hash for deduplication
   source: string;
-  sourceUrl?: string;
+  sourceUrl: string;
   publishedAt: number | string;
-  topics?: string[];
+  topics: string[];
+  verified?: boolean;
+  verificationScore?: number;
+  corroboratedBy?: string[]; // List of Incident IDs that corroborate this
   tags?: string[];
   contentHash: string;
   minHash: number[];
@@ -440,4 +444,43 @@ export function isFirestoreAvailable(): boolean {
 export function getDb() {
   if (!db) throw new Error('Firestore not initialized');
   return db;
+}
+//=============================================================================
+// IPFS SNAPSHOTS COLLECTION
+//=============================================================================
+
+export interface IPFSSnapshot {
+  id: string;
+  cid: string;
+  url: string;
+  timestamp: number;
+  articleCount: number;
+  sizeBytes: number;
+  createdAt: number;
+}
+
+export async function saveIPFSSnapshot(snapshot: Omit<IPFSSnapshot, 'id' | 'createdAt'>): Promise<string> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const docRef = await db.collection('ipfs_snapshots').add({
+    ...snapshot,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return docRef.id;
+}
+
+export async function getIPFSSnapshots(limit: number = 20): Promise<IPFSSnapshot[]> {
+  if (!db) throw new Error('Firestore not initialized');
+
+  const snapshot = await db
+    .collection('ipfs_snapshots')
+    .orderBy('timestamp', 'desc')
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IPFSSnapshot[];
 }
