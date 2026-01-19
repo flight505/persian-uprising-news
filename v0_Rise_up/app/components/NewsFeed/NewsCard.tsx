@@ -1,0 +1,206 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Badge } from "@/app/components/ui/badge"
+import { cn } from "@/lib/utils"
+
+interface NewsCardProps {
+  id?: string
+  title: string
+  summary: string
+  url: string
+  publishedAt: string
+  topics: string[]
+  source?: "perplexity" | "twitter" | "telegram"
+  author?: string
+  channelName?: string
+  content?: string
+}
+
+function detectLanguage(text: string): "fa" | "en" {
+  const farsiPattern = /[\u0600-\u06FF]/
+  return farsiPattern.test(text) ? "fa" : "en"
+}
+
+export default function NewsCard({
+  id,
+  title,
+  summary,
+  url,
+  publishedAt,
+  topics,
+  source,
+  author,
+  channelName,
+  content,
+}: NewsCardProps) {
+  const [detectedLang, setDetectedLang] = useState<"fa" | "en">("en")
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  useEffect(() => {
+    const lang = detectLanguage(title + " " + summary)
+    setDetectedLang(lang)
+  }, [title, summary])
+
+  const isRTL = detectedLang === "fa"
+
+  const topicVariants: Record<
+    string,
+    "iran" | "official" | "opposition" | "leader" | "world" | "solidarity" | "breaking" | "embassy"
+  > = {
+    "iran.now": "iran",
+    "iran.statements_official": "official",
+    "iran.statements_opposition": "opposition",
+    "entity.reza_pahlavi": "leader",
+    "leaders.world_statements": "world",
+    "protests.solidarity_global": "solidarity",
+    "top.breaking_global": "breaking",
+    "events.embassy_incidents": "embassy",
+  }
+
+  const topicLabels: Record<string, string> = {
+    "iran.now": "Iran Events",
+    "iran.statements_official": "Official Statement",
+    "iran.statements_opposition": "Opposition",
+    "entity.reza_pahlavi": "Reza Pahlavi",
+    "leaders.world_statements": "World Leaders",
+    "protests.solidarity_global": "Global Solidarity",
+    "top.breaking_global": "Breaking",
+    "events.embassy_incidents": "Embassy",
+  }
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr)
+      const now = new Date()
+      const diffMs = now.getTime() - date.getTime()
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+
+      if (diffMins < 60) {
+        return `${diffMins}m ago`
+      } else if (diffHours < 24) {
+        return `${diffHours}h ago`
+      } else {
+        return date.toLocaleDateString()
+      }
+    } catch {
+      return dateStr
+    }
+  }
+
+  const sourceIcons = {
+    twitter: "𝕏",
+    telegram: "✈️",
+    perplexity: "🔍",
+  }
+
+  return (
+    <article
+      className={cn(
+        "group relative",
+        "bg-card rounded-xl overflow-hidden",
+        "border border-border/50",
+        "transition-all duration-300 ease-out",
+        "hover:scale-[1.02] hover:shadow-xl hover:border-primary/30",
+        "elevation-2 hover:elevation-4",
+      )}
+    >
+      {/* Gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-accent/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      {/* Content container */}
+      <div className="relative p-6">
+        {/* Topics and Language Indicator */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {topics.map((topic) => (
+            <Badge
+              key={topic}
+              variant={topicVariants[topic] || "secondary"}
+              className="transition-transform duration-200 hover:scale-105"
+            >
+              {topicLabels[topic] || topic}
+            </Badge>
+          ))}
+          {detectedLang === "fa" && (
+            <Badge variant="outline" className="gap-1">
+              🇮🇷 Farsi
+            </Badge>
+          )}
+        </div>
+
+        {/* Title */}
+        <h2
+          className={cn(
+            "text-title mb-3 text-card-foreground",
+            "transition-all duration-300",
+            "group-hover:text-primary",
+            "leading-tight",
+          )}
+          dir={isRTL ? "rtl" : "ltr"}
+          style={{ textAlign: isRTL ? "right" : "left" }}
+        >
+          {title}
+        </h2>
+
+        {/* Summary */}
+        <div>
+          <p
+            className={cn(
+              "text-body text-muted-foreground mb-2 leading-relaxed",
+              !isExpanded && "line-clamp-3",
+              "transition-all duration-300",
+            )}
+            dir={isRTL ? "rtl" : "ltr"}
+            style={{ textAlign: isRTL ? "right" : "left" }}
+          >
+            {summary}
+          </p>
+          {summary.length > 150 && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsExpanded(!isExpanded)
+              }}
+              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors cursor-pointer"
+            >
+              {isExpanded ? "← Show less" : "Show more →"}
+            </button>
+          )}
+        </div>
+
+        {/* Footer with divider */}
+        <div className="pt-4 border-t border-border/50 mt-4">
+          <div className="flex items-center justify-between text-label text-muted-foreground mb-3">
+            <div className="flex items-center gap-2">
+              <time className="font-medium">{formatDate(publishedAt)}</time>
+              {source && (
+                <>
+                  <span className="text-border">•</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-base">{sourceIcons[source]}</span>
+                    <span className="text-xs">{author ? `@${author}` : channelName || source}</span>
+                  </span>
+                </>
+              )}
+            </div>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "text-primary hover:text-primary/80 font-medium",
+                "transition-colors duration-200",
+                "flex items-center gap-1",
+              )}
+            >
+              <span>Read more</span>
+              <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}

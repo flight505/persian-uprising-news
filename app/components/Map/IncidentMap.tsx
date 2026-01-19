@@ -77,7 +77,7 @@ function getIncidentIcon(type: string, verified: boolean) {
 
   return L.divIcon({
     html: svgIcon,
-    className: 'custom-incident-icon',
+    className: `custom-incident-icon marker-pulse text-[${color}]`, // Added marker-pulse
     iconSize: [32, 42],
     iconAnchor: [16, 42],
     popupAnchor: [0, -42],
@@ -181,9 +181,9 @@ function HeatmapLayer({ incidents, show }: { incidents: Incident[]; show: boolea
     const heatPoints = incidents.map((incident) => {
       const intensity =
         incident.type === 'death' ? 1.0
-        : incident.type === 'injury' ? 0.7
-        : incident.type === 'arrest' ? 0.5
-        : 0.3; // protest, other
+          : incident.type === 'injury' ? 0.7
+            : incident.type === 'arrest' ? 0.5
+              : 0.3; // protest, other
 
       return [incident.location.lat, incident.location.lon, intensity] as [number, number, number];
     });
@@ -285,107 +285,91 @@ export default function IncidentMap({ incidents, selectedType, onIncidentClick, 
 
   return (
     <>
-    <MapContainer
-      center={IRAN_CENTER}
-      zoom={5}
-      minZoom={5}
-      maxZoom={18}
-      className="w-full h-full"
-      style={{ height: '100%', width: '100%' }}
-      scrollWheelZoom={true}
-      maxBounds={IRAN_BOUNDS}
-    >
-      <LayersControl position="topright">
-        {/* Modern Style - CartoDB Voyager (Default) */}
-        <BaseLayer checked name="Modern (Default)">
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-            maxZoom={20}
-          />
-        </BaseLayer>
-
-        {/* Topographic Map - OpenTopoMap */}
-        <BaseLayer name="Topographic">
-          <TileLayer
-            attribution='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-            maxZoom={17}
-          />
-        </BaseLayer>
-
-        {/* Satellite Imagery - Esri World Imagery */}
-        <BaseLayer name="Satellite">
-          <TileLayer
-            attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={19}
-          />
-        </BaseLayer>
-
-        {/* Dark Mode - CartoDB Dark Matter */}
-        <BaseLayer name="Dark Mode">
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-            maxZoom={20}
-          />
-        </BaseLayer>
-      </LayersControl>
-
-      <MapController
-        centerOn={centerOn}
-        onReset={() => setCenterOn(null)}
-      />
-      <HeatmapLayer incidents={filteredIncidents} show={showHeatmap} />
-
-      <MarkerClusterGroup
-        chunkedLoading
-        maxClusterRadius={50}
-        spiderfyOnMaxZoom={true}
-        showCoverageOnHover={false}
-        zoomToBoundsOnClick={true}
+      <MapContainer
+        center={IRAN_CENTER}
+        zoom={5}
+        minZoom={5}
+        maxZoom={18}
+        className="w-full h-full"
+        style={{ height: '100%', width: '100%' }}
+        scrollWheelZoom={true}
+        maxBounds={IRAN_BOUNDS}
       >
-        {filteredIncidents.map((incident) => (
-          <Marker
-            key={incident.id}
-            position={[incident.location.lat, incident.location.lon]}
-            icon={getIncidentIcon(incident.type, incident.verified)}
-            eventHandlers={{
-              click: (e) => {
-                L.DomEvent.stopPropagation(e);
-                // Center map on clicked marker to ensure side panel content is visible
-                setCenterOn([incident.location.lat, incident.location.lon]);
-                setSelectedIncident(incident);
-                onIncidentClick?.(incident);
-              },
-            }}
-          >
-            {/* Tooltip for hover - sticky so it doesn't disappear immediately */}
-            <Tooltip
-              direction="top"
-              opacity={0.95}
-              offset={[0, -32]}
-              permanent={false}
-              sticky={true}
-            >
-              <div className="text-center px-2 py-1">
-                <div className="font-semibold text-sm mb-1">{incident.title}</div>
-                <div className="text-xs text-gray-600 font-medium">👆 Click marker for details</div>
-              </div>
-            </Tooltip>
-          </Marker>
-        ))}
-      </MarkerClusterGroup>
-    </MapContainer>
+        <LayersControl position="topright">
+          {/* Modern Style - CartoDB Voyager */}
+          <BaseLayer name="Light Mode">
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              maxZoom={20}
+            />
+          </BaseLayer>
 
-    {/* Side Panel for incident details */}
-    <IncidentSidePanel
-      incident={selectedIncident}
-      onClose={() => setSelectedIncident(null)}
-    />
-  </>
+          {/* ... other layers ... */}
+
+          {/* Dark Mode - CartoDB Dark Matter (Default) */}
+          <BaseLayer checked name="Dark Mode">
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              maxZoom={20}
+            />
+          </BaseLayer>
+        </LayersControl>
+
+        <MapController
+          centerOn={centerOn}
+          onReset={() => setCenterOn(null)}
+        />
+        <HeatmapLayer incidents={filteredIncidents} show={showHeatmap} />
+
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={50}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          zoomToBoundsOnClick={true}
+        >
+          {filteredIncidents.map((incident) => (
+            <Marker
+              key={incident.id}
+              position={[incident.location.lat, incident.location.lon]}
+              icon={getIncidentIcon(incident.type, incident.verified)}
+              eventHandlers={{
+                click: (e) => {
+                  L.DomEvent.stopPropagation(e);
+                  // Center map on clicked marker to ensure side panel content is visible
+                  setCenterOn([incident.location.lat, incident.location.lon]);
+                  setSelectedIncident(incident);
+                  onIncidentClick?.(incident);
+                },
+              }}
+            >
+              {/* Tooltip for hover - sticky so it doesn't disappear immediately */}
+              <Tooltip
+                direction="top"
+                opacity={0.95}
+                offset={[0, -32]}
+                permanent={false}
+                sticky={true}
+              >
+                <div className="text-center px-2 py-1">
+                  <div className="font-semibold text-sm mb-1">{incident.title}</div>
+                  <div className="text-xs text-gray-600 font-medium">👆 Click marker for details</div>
+                </div>
+              </Tooltip>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+      </MapContainer>
+
+      {/* Side Panel for incident details */}
+      <IncidentSidePanel
+        incident={selectedIncident}
+        onClose={() => setSelectedIncident(null)}
+      />
+    </>
   );
 }

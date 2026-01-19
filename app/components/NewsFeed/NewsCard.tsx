@@ -162,11 +162,11 @@ export default function NewsCard({ id, title, summary, url, publishedAt, topics,
   return (
     <article className={cn(
       "group relative",
-      "bg-card rounded-xl overflow-hidden",
-      "border border-border/50",
-      "transition-all duration-300 ease-out",
-      "hover:scale-[1.02] hover:shadow-xl hover:border-primary/30",
-      "elevation-2 hover:elevation-4"
+      "bg-card/50 backdrop-blur-sm rounded-2xl overflow-hidden", // Glass effect
+      "border border-white/10 dark:border-white/5",
+      "transition-all duration-300 m3-motion-emphasized",
+      "hover:scale-[1.02] hover:bg-card/80",
+      "m3-elevation-1 hover:m3-elevation-3"
     )}>
       {/* Gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-accent/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

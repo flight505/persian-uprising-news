@@ -38,7 +38,11 @@ interface NewsResponse {
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-export default function NewsFeed() {
+interface NewsFeedProps {
+  externalTopicQuery?: string;
+}
+
+export default function NewsFeed({ externalTopicQuery }: NewsFeedProps) {
   const [page, setPage] = useState(0);
   const [allArticles, setAllArticles] = useState<Article[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -51,8 +55,36 @@ export default function NewsFeed() {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
 
+  // Effect to update filters when externalTopicQuery changes
+  useEffect(() => {
+    if (externalTopicQuery !== undefined) {
+      // If query is empty, clear topics. If not, split by space and set as topics.
+      const newTopics = externalTopicQuery ? externalTopicQuery.split(" ") : [];
+      setFilters(prev => ({ ...prev, topics: newTopics }));
+      // Optional: Reset page to 0 when topic changes
+      setPage(0);
+      setAllArticles([]); // Clear articles to trigger fresh fetch
+    }
+  }, [externalTopicQuery]);
+
+  // Construct query string with filters
+  const buildQueryUrl = () => {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('limit', '20');
+    params.set('v', '2');
+
+    if (filters.topics && filters.topics.length > 0) {
+      params.set('topics', filters.topics.join(','));
+    }
+
+    // Add other filters here if needed
+
+    return `/api/news?${params.toString()}`;
+  };
+
   const { data, error, isLoading, mutate } = useSWR<NewsResponse>(
-    `/api/news?page=${page}&limit=20&v=2`,
+    buildQueryUrl(),
     fetcher,
     {
       refreshInterval: 600000,
@@ -106,7 +138,11 @@ export default function NewsFeed() {
       if (page === 0) {
         setAllArticles(data.articles);
       } else {
-        setAllArticles(prev => [...prev, ...data.articles]);
+        // Dedup logic could be added here
+        setAllArticles(prev => {
+          const newIds = new Set(data.articles.map(a => a.id));
+          return [...prev.filter(a => !newIds.has(a.id)), ...data.articles];
+        });
       }
 
       if (isOnline()) {

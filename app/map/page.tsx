@@ -71,9 +71,9 @@ export default function MapPage() {
     // Filter by date range if set
     const visibleIncidents = dateRange
       ? incidents.filter(inc => {
-          const incDate = new Date(inc.timestamp);
-          return incDate >= dateRange.start && incDate <= dateRange.end;
-        })
+        const incDate = new Date(inc.timestamp);
+        return incDate >= dateRange.start && incDate <= dateRange.end;
+      })
       : incidents;
 
     const counts: Record<string, number> = {
@@ -103,6 +103,28 @@ export default function MapPage() {
 
     return countByDay;
   };
+
+  // Ensure min/max date logic handles sparse data gracefully
+  const [timelineStart, setTimelineStart] = useState<Date>(new Date());
+  const [timelineEnd, setTimelineEnd] = useState<Date>(new Date());
+
+  useEffect(() => {
+    if (incidents.length > 0) {
+      const timestamps = incidents.map(i => i.timestamp);
+      const min = new Date(Math.min(...timestamps));
+      const max = new Date(Math.max(...timestamps));
+
+      // If range is too small (e.g. same day), expand it for visual timeline appeal
+      if (max.getTime() - min.getTime() < 86400000 * 2) {
+        // Expand to 1 week before and 1 day after
+        min.setDate(min.getDate() - 7);
+        max.setDate(max.getDate() + 1);
+      }
+
+      setTimelineStart(min);
+      setTimelineEnd(max);
+    }
+  }, [incidents]);
 
   // Memoize the date range change handler to prevent infinite re-renders
   const handleDateRangeChange = useCallback((start: Date, end: Date) => {
@@ -144,90 +166,66 @@ export default function MapPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
+      {/* Search/Header Bar - Floating Glass */}
+      <div className="absolute top-0 left-0 right-0 z-[1000] p-4 pointer-events-none">
+        <div className="max-w-7xl mx-auto flex flex-col gap-4 pointer-events-auto">
+          {/* Top Bar */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-              >
-                ← News Feed
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Incident Map
-              </h1>
-            </div>
-
             <Link
-              href="/report"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+              href="/"
+              className="flex items-center gap-2 px-4 py-2 rounded-full glass-dark border border-white/10 hover:bg-white/5 transition group"
             >
-              📍 Report Incident
+              <span className="text-white group-hover:-translate-x-1 transition-transform">←</span>
+              <span className="text-sm font-medium text-white">Back to News</span>
             </Link>
-          </div>
-        </div>
-      </header>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowHeatmap(!showHeatmap)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition backdrop-blur-md border ${showHeatmap
+                    ? 'bg-expression-red/20 text-expression-red border-expression-red/30'
+                    : 'bg-black/40 text-white/70 border-white/10 hover:bg-black/60'
+                  }`}
+              >
+                🔥 Heatmap
+              </button>
+
+              <Link
+                href="/report"
+                className="px-4 py-2 bg-expression-green/90 text-black font-semibold rounded-full hover:bg-expression-green shadow-lg shadow-expression-green/20 transition text-sm flex items-center gap-2"
+              >
+                <span>📍</span>
+                <span>Report</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex overflow-x-auto pb-2 scrollbar-hide gap-2">
             {filterButtons.map(button => (
               <button
                 key={button.type}
                 onClick={() => setSelectedType(button.type)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                  selectedType === button.type
-                    ? `${button.color} text-white`
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition backdrop-blur-md border ${selectedType === button.type
+                    ? `${button.color} text-white border-transparent shadow-lg`
+                    : 'bg-black/40 text-white/70 border-white/10 hover:bg-white/10'
+                  }`}
               >
-                {button.label} ({button.count})
+                {button.label} <span className="opacity-60 ml-1 text-xs">{button.count}</span>
               </button>
             ))}
-          </div>
-
-          {/* Stats */}
-          <div className="mt-3 flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-            <span>
-              ✓ {incidents.filter(i => i.verified).length} Verified
-            </span>
-            <span>
-              👤 {incidents.filter(i => i.reportedBy === 'crowdsource').length} Crowdsourced
-            </span>
-            <span>
-              🔵 {incidents.filter(i => i.reportedBy === 'official').length} Official
-            </span>
-            <button
-              onClick={() => setShowHeatmap(!showHeatmap)}
-              className={`px-2 py-1 rounded text-xs font-medium transition ${
-                showHeatmap
-                  ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-              }`}
-            >
-              🔥 {showHeatmap ? 'Hide' : 'Show'} Heatmap
-            </button>
-            <button
-              onClick={fetchIncidents}
-              className="ml-auto text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              🔄 Refresh
-            </button>
           </div>
         </div>
       </div>
 
       {/* Map Container */}
-      <div className="flex-1 relative">
+      <div className="absolute inset-0 z-0">
         {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+          <div className="w-full h-full flex items-center justify-center bg-zinc-900">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4 mx-auto"></div>
-              <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-expression-green mb-4 mx-auto"></div>
+              <p className="text-zinc-400 animate-pulse">Establishing Secure Uplink...</p>
             </div>
           </div>
         ) : (
@@ -241,10 +239,10 @@ export default function MapPage() {
 
             {/* Floating Timeline Slider */}
             {incidents.length > 0 && (
-              <div className="absolute bottom-6 md:bottom-8 left-0 right-0 z-[1000] px-4 md:px-0 flex justify-center">
+              <div className="absolute bottom-24 md:bottom-8 left-0 right-0 z-[1000] px-4 md:px-0 flex justify-center pointer-events-none">
                 <TimelineSlider
-                  minDate={new Date(Math.min(...incidents.map(i => i.timestamp)))}
-                  maxDate={new Date(Math.max(...incidents.map(i => i.timestamp)))}
+                  minDate={timelineStart}
+                  maxDate={timelineEnd}
                   onDateRangeChange={handleDateRangeChange}
                   onClearFilter={handleClearFilter}
                   incidentCountByDay={incidentCountByDay}

@@ -119,11 +119,10 @@ export default function TimelineSlider({
             setIsTimelineActive(true); // Activate timeline filtering
             setIsPlaying(!isPlaying);
           }}
-          className={`p-2.5 rounded-full transition-colors active:scale-95 ${
-            isPlaying
-              ? 'bg-gray-700 text-white'
-              : 'bg-gray-900 text-white hover:bg-gray-700'
-          }`}
+          className={`p-2.5 rounded-full transition-all active:scale-95 border ${isPlaying
+              ? 'bg-expression-green text-black border-expression-green shadow-[0_0_15px_rgba(34,197,94,0.4)]'
+              : 'bg-surface-3 text-white border-white/10 hover:bg-surface-4'
+            }`}
           title={isPlaying ? 'Pause' : 'Play Timeline'}
         >
           {isPlaying ? (
@@ -131,7 +130,7 @@ export default function TimelineSlider({
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
             </svg>
           ) : (
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
           )}
@@ -153,9 +152,9 @@ export default function TimelineSlider({
           />
 
           {/* Visual Track */}
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-500/20 rounded-full pointer-events-none">
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-surface-4/50 rounded-full pointer-events-none overflow-hidden backdrop-blur-sm">
             <div
-              className="h-full bg-blue-500/50 rounded-full transition-all duration-100"
+              className="h-full bg-gradient-to-r from-expression-green to-expression-amber rounded-full transition-all duration-100 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
               style={{
                 width: `${(currentIndex / (uniqueDates.length - 1)) * 100}%`,
               }}
@@ -171,11 +170,10 @@ export default function TimelineSlider({
             setCurrentIndex(0);
             onClearFilter?.(); // Notify parent to show all incidents
           }}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition active:scale-95 ${
-            !isTimelineActive
-              ? 'bg-gray-800 text-white border border-gray-800'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition active:scale-95 border ${!isTimelineActive
+              ? 'bg-expression-green/20 text-expression-green border-expression-green/30'
+              : 'bg-surface-3 text-zinc-400 border-white/5 hover:bg-surface-4 hover:text-zinc-200'
+            }`}
           title="Show all incidents"
         >
           Show All
